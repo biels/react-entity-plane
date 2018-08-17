@@ -1,0 +1,24 @@
+
+# IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Node
+node_modules
+npm-debug.log*
+lerna-debug.log
+yarn-error.log
+
+# macOS
+.DS_Store
+
+# Distribution
+/build/
+/dist/
+/lib/
+/generated
+/coverage
+/docs
+docs-static/**/*.d.ts
