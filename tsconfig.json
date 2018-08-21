@@ -28,7 +28,8 @@
     "strict": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "declarationMap": true
   },
   "include": [
     "src"
