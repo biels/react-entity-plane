@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import ReactDOM from 'react-dom';
 import _ from "lodash";
 import {EntitiesObject} from "./types/entities";
 import {ProvidedEntityContext} from "./EntityContext";

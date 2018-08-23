@@ -1,15 +1,16 @@
 import React, {Component} from 'react';
-import styled from "styled-components";
+import ReactDOM from 'react-dom';
 import _ from "lodash";
 import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from "./EntityContext";
 import {EntityNodeInfo} from "./types/EntityPlaneInfo"; // TODO Remove, put all in global entiity info instead
-import All from "react-all-of/lib/All";
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer} from "./EntityPlaneProvider";
 import {EntitiesObject} from "./types/entities";
 import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
 import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
+import All from "react-namespaces/lib/All";
+
 
 export interface EntityContextSpyRenderProps {
     info: EntityNodeInfo
@@ -35,6 +36,10 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
             NavigationSpy, PageContextSpy, EntityContextConsumer, Namespace, EntityPlaneConsumer
         ]}>
             {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entities: EntitiesObject) => {
+                if(entities == null){
+                    console.log('Please use <Entity/> inside an entity context');
+                    return null;
+                }
                 const parentNamespace = _.dropRight(namespace);
                 const getFieldPath = (ns) => ns.join('.relations.');
                 const fieldPath = getFieldPath(namespace); // Universal path (in info and state)

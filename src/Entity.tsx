@@ -7,9 +7,9 @@ import {Mutation} from "react-apollo";
 import {FetchPolicy, PureQueryOptions} from "apollo-client";
 import {DocumentNode} from "graphql";
 import {NonIdealState} from "@blueprintjs/core";
-import All from "react-all-of/lib/All";
 import {NavigateParams} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import {Namespace} from "react-namespaces";
+import All from "react-namespaces/lib/All";
 
 
 export interface EntityObject {

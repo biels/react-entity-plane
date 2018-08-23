@@ -1,3 +1,4 @@
+# remove src to link directly to source
 src
 tsconfig.json
 tslint.json

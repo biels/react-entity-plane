@@ -2,8 +2,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "lib",
-    "module": "esnext",
-    "target": "es2017",
+    "module": "commonjs",
+    "target": "es6",
     "lib": [
       "es6",
       "dom",
@@ -24,12 +24,12 @@
     "noUnusedParameters": false,
     "allowUnreachableCode": true,
     "allowSyntheticDefaultImports": true,
-    "pretty": false,
+    "pretty": true,
     "strict": false,
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
+    "skipLibCheck": false,
+    "skipDefaultLibCheck": false,
     "experimentalDecorators": true,
-    "declarationMap": true
+    "esModuleInterop": true
   },
   "include": [
     "src"
@@ -42,6 +42,8 @@
     "webpack",
     "jest",
     "lib",
-    "src/setupTests.ts"
+    "src/setupTests.ts",
+    "src/*.test.ts",
+    "src/*.test.tsx"
   ]
 }
