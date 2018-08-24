@@ -5,7 +5,7 @@ import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from
 import {EntityNodeInfo} from "./types/EntityPlaneInfo"; // TODO Remove, put all in global entiity info instead
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer} from "./EntityPlaneProvider";
-import {EntitiesObject, EntityInfo} from "./types/entities";
+import {EntitiesObject, EntityInfo, RelationInfo} from "./types/entities";
 import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
 import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
@@ -13,19 +13,22 @@ import All from "react-namespaces/lib/All";
 
 
 export interface EntityContextSpyRenderProps {
-    info: EntityInfo
+    entityInfo: EntityInfo
+    parentEntityInfo: EntityInfo,
+    relationInfo: RelationInfo
+    parentRelationInfo: RelationInfo,
     state: EntityPlaneStateNode,
-    parentInfo: EntityInfo,
     parentState: EntityPlaneStateNode
     onChange: (newValue: EntityPlaneStateNode) => any
+    getEntityInfo: (entityName: string) => EntityInfo
     namespace: string[],
     rootEntityId: string | number
     topLevel: boolean
+    isRelation: boolean
     // getRelation: (relationName: string) => Object
     navigate: ProvidedNavigationContext['navigate']
     entities: EntitiesObject
 }
-
 export interface EntityContextSpyProps {
     children: (props: EntityContextSpyRenderProps) => any
 }
@@ -37,21 +40,25 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
             NavigationSpy, PageContextSpy, EntityContextConsumer, Namespace, EntityPlaneConsumer
         ]}>
             {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entities: EntitiesObject) => {
-                if (entities == null) {
+                if(entities == null){
                     console.log('Please use <Entity/> inside an entity context');
                     return null;
                 }
-                const parentNamespace = _.dropRight(namespace);
+                const getEntityInfo = (entityName): EntityInfo => {
+                    if(entityName == null) return null
+                    const info = entities[entityName]
+                    if(info == null) console.log(`Tried to access unknown entity ${entityName}`);
+                    return info
+
+                }
+                const parentNamespace = _.dropRight(namespace) as string[];
                 const getFieldPath = (ns) => ns.join('.relations.');
                 const fieldPath = getFieldPath(namespace); // Universal path (in info and state)
-                const getEntityInfo = (entityName) => entities[entityName];
-                // const getLocalInfo = () => _.get(entityContext.value.infoNodes, fieldPath);
-                const getLocalInfo = () => getEntityInfo();
+                const getLocalInfo = () => _.get(entityContext.value.infoNodes, fieldPath);
                 const getLocalState = () => _.get(entityContext.value.stateNodes, fieldPath);
                 const parentFieldPath = getFieldPath(parentNamespace); // Universal path (in info and state)
                 const getParentLocalInfo = () => _.get(entityContext.value.infoNodes, parentFieldPath);
-                const getParentInfo = () => _.get(entities, parentFieldPath);
-                const getParentState = () => _.get(entityContext.value.stateNodes, parentFieldPath);
+                const getParentState = (): EntityPlaneStateNode => _.get(entityContext.value.stateNodes, parentFieldPath);
                 const onStateChange = (newLocalState) => {
                     //On state change
                     const stateTemplate = _.set({}, fieldPath, newLocalState)
@@ -59,20 +66,38 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     entityContext.onStateChange(newState)
                 };
                 const topLevel = parentNamespace.length == 0;
-                if (getLocalState() == null) {
-                    //Initialize local value
-                    let entityName = getLocalInfo();
-                    if(topLevel){
+                const isRelation = !topLevel;
+                const nsFrame: string = _.last(namespace);
+                const parentNSFrame: string = _.last(parentNamespace);
+                // [e1, r1, r2, r3, ...]
+                // entity1.relations.entity2, entity2.relations.entity3
+                // entity1.relations.entity2.relations.entity3
+                // RelationInfo (null on topLevel) -> entityName, EntityInfo
 
-                    }else {
-                        const parentState = getParentState();
-                        if (parentState == null) {
-                            return fieldPath + ' is not a valid path'
-                        }
+
+                const getEntityName = () => {
+                    if(isRelation){
+                        return getRelationInfo().entityName
+                    }else{
+                        return nsFrame;
                     }
-
-
-                    const entityName = localInfo.entityName
+                }
+                const getParentEntityName = () => {
+                    if(topLevel) return null;
+                    getParentState().entityName;
+                }
+                const getRelationInfo = () => {
+                    if(!isRelation) return null;
+                    const parentEntityState = getParentState();
+                    const parentEntityName = parentEntityState.entityName;
+                    const parentEntityInfo = getEntityInfo(parentEntityName);
+                    return parentEntityInfo.relations[nsFrame]
+                }
+                const getCurrentEntityInfo = () => getEntityInfo(getEntityName())
+                const getParentEntityInfo = () => getEntityInfo(getParentEntityName())
+                if(getLocalState() == null){
+                    //Initialize local value
+                    const entityName = _.last(namespace);
                     console.log({entityName, topLevel});
                     setTimeout(() => onStateChange({
                         entityName,
@@ -85,10 +110,12 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
 
 
                 return this.props.children({
+                    entityInfo: getCurrentEntityInfo(),
+                    parentEntityInfo: getParentEntityInfo(),
                     onChange: onStateChange,
-                    info: getInfo(),
+                    info: getLocalInfo(),
                     state: getLocalState(),
-                    parentInfo: getParentInfo(),
+                    parentInfo: getParentLocalInfo(),
                     parentState: getParentState(),
                     namespace,
                     rootEntityId: args.entityId,
