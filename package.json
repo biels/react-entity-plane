@@ -7,7 +7,6 @@
     "build": "rm -rf lib && tsc",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "npm test",
     "postversion": "git push && git push --tags",
     "publish:patch": "npm version patch && npm publish",
     "publish:minor": "npm version minor && npm publish",

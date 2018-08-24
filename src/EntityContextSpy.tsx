@@ -5,7 +5,7 @@ import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from
 import {EntityNodeInfo} from "./types/EntityPlaneInfo"; // TODO Remove, put all in global entiity info instead
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer} from "./EntityPlaneProvider";
-import {EntitiesObject} from "./types/entities";
+import {EntitiesObject, EntityInfo} from "./types/entities";
 import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
 import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
@@ -13,9 +13,9 @@ import All from "react-namespaces/lib/All";
 
 
 export interface EntityContextSpyRenderProps {
-    info: EntityNodeInfo
+    info: EntityInfo
     state: EntityPlaneStateNode,
-    parentInfo: EntityNodeInfo,
+    parentInfo: EntityInfo,
     parentState: EntityPlaneStateNode
     onChange: (newValue: EntityPlaneStateNode) => any
     namespace: string[],
@@ -25,6 +25,7 @@ export interface EntityContextSpyRenderProps {
     navigate: ProvidedNavigationContext['navigate']
     entities: EntitiesObject
 }
+
 export interface EntityContextSpyProps {
     children: (props: EntityContextSpyRenderProps) => any
 }
@@ -36,17 +37,20 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
             NavigationSpy, PageContextSpy, EntityContextConsumer, Namespace, EntityPlaneConsumer
         ]}>
             {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entities: EntitiesObject) => {
-                if(entities == null){
+                if (entities == null) {
                     console.log('Please use <Entity/> inside an entity context');
                     return null;
                 }
                 const parentNamespace = _.dropRight(namespace);
                 const getFieldPath = (ns) => ns.join('.relations.');
                 const fieldPath = getFieldPath(namespace); // Universal path (in info and state)
-                const getLocalInfo = () => _.get(entityContext.value.infoNodes, fieldPath);
+                const getEntityInfo = (entityName) => entities[entityName];
+                // const getLocalInfo = () => _.get(entityContext.value.infoNodes, fieldPath);
+                const getLocalInfo = () => getEntityInfo();
                 const getLocalState = () => _.get(entityContext.value.stateNodes, fieldPath);
                 const parentFieldPath = getFieldPath(parentNamespace); // Universal path (in info and state)
                 const getParentLocalInfo = () => _.get(entityContext.value.infoNodes, parentFieldPath);
+                const getParentInfo = () => _.get(entities, parentFieldPath);
                 const getParentState = () => _.get(entityContext.value.stateNodes, parentFieldPath);
                 const onStateChange = (newLocalState) => {
                     //On state change
@@ -55,11 +59,23 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     entityContext.onStateChange(newState)
                 };
                 const topLevel = parentNamespace.length == 0;
-                if(getLocalState() == null){
+                if (getLocalState() == null) {
                     //Initialize local value
-                    const entityName = _.last(namespace);
+                    let entityName = getLocalInfo();
+                    if(topLevel){
+
+                    }else {
+                        const parentState = getParentState();
+                        if (parentState == null) {
+                            return fieldPath + ' is not a valid path'
+                        }
+                    }
+
+
+                    const entityName = localInfo.entityName
                     console.log({entityName, topLevel});
                     setTimeout(() => onStateChange({
+                        entityName,
                         selectedIndex: null,
                         editingIndex: null,
                         relations: {}
@@ -70,9 +86,9 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
 
                 return this.props.children({
                     onChange: onStateChange,
-                    info: getLocalInfo(),
+                    info: getInfo(),
                     state: getLocalState(),
-                    parentInfo: getParentLocalInfo(),
+                    parentInfo: getParentInfo(),
                     parentState: getParentState(),
                     namespace,
                     rootEntityId: args.entityId,

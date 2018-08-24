@@ -49,9 +49,13 @@ class Entity extends Component<EntityProps> {
     render() {
         return <Namespace name={this.props.relation || this.props.name}>
             <EntityContextSpy>
-                {({info, state, parentInfo, parentState, onChange, namespace, rootEntityId, navigate, topLevel, entities}) => {
+                {({info, parentInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, entities}) => {
+                    if(topLevel && this.props.name == null) {
+                        console.log(`Used top level <Entity/> without a name with relation ${this.props.relation}`, this.props);
+                        return null
+                    }
                     const getInfo = (name: EntityInfoKey) => entities[name]
-                    const entityInfo = getInfo(info.entityName)
+                    const entityInfo = getInfo(state.entityName)
                     const selectedIndex = state.selectedIndex;
                     const editingIndex = state.editingIndex;
 
@@ -59,7 +63,7 @@ class Entity extends Component<EntityProps> {
                     let query: EntityQuery;
                     let variables = {}
                     if(this.props.relation && !topLevel){
-                        const parentEntityInfo = getInfo(parentInfo.entityName)
+                        const parentEntityInfo = getInfo(parentState.entityName)
                         if(parentState.selectedIndex == null){
                             return <NonIdealState title={'No hay ' + parentEntityInfo.display.singular.toLowerCase() + ' seleccionado/a'} icon={"select"}/>
                         }
