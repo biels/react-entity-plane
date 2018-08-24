@@ -1,9 +1,10 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import {EntityPlaneInfo} from "./types/EntityPlaneInfo";
+import {EntityInfoKey} from "./types/entities";
 
 export interface EntityPlaneStateNode {
-    // entityName: EntityInfoKey,
+    entityName: EntityInfoKey,
     selectedIndex: number | null,
     editingIndex: number | null,
     selectedId: number | string | null,

@@ -25,6 +25,11 @@ export interface EntityMutations {
     delete?: EntityMutation
     [key: string]: EntityMutation
 }
+export interface RelationInfo {
+    entityName: EntityInfoKey,
+    type?: 'single' | 'multi'
+    queries: EntityQueries
+}
 export interface EntityInfo {
     name: EntityInfoKey
     queries: EntityQueries
@@ -34,11 +39,7 @@ export interface EntityInfo {
         plural: string
     },
     relations: {
-        [realtionName: string]: {
-            entityName: EntityInfoKey,
-            type?: 'single' | 'multi'
-            queries: EntityQueries
-        }
+        [realtionName: string]: RelationInfo
     }
 }
 export interface EntitiesObject {
