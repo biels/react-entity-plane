@@ -1,8 +1,6 @@
 import React, {Component} from 'react';
-import ReactDOM from 'react-dom';
 import _ from "lodash";
 import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from "./EntityContext";
-import {EntityNodeInfo} from "./types/EntityPlaneInfo"; // TODO Remove, put all in global entiity info instead
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer} from "./EntityPlaneProvider";
 import {EntitiesObject, EntityInfo, RelationInfo} from "./types/entities";
@@ -10,13 +8,14 @@ import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationCo
 import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
 import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
 import All from "react-namespaces/lib/All";
+import {err} from "./errorMessage";
 
 
 export interface EntityContextSpyRenderProps {
     entityInfo: EntityInfo
     parentEntityInfo: EntityInfo,
     relationInfo: RelationInfo
-    parentRelationInfo: RelationInfo,
+    // parentRelationInfo: RelationInfo, //Implement if needed
     state: EntityPlaneStateNode,
     parentState: EntityPlaneStateNode
     onChange: (newValue: EntityPlaneStateNode) => any
@@ -41,9 +40,13 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
         ]}>
             {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entities: EntitiesObject) => {
                 if(entities == null){
-                    console.log('Please use <Entity/> inside an entity context');
-                    return null;
+                    return err(`Please use <Entity/> inside an entity context`);
                 }
+                if(namespace.length === 0) {
+                    return err(`Used top level <Entity/> without a name`);
+                }
+
+                //console.log('[EntityContextSpy] Namespace', namespace.join('.'));
                 const getEntityInfo = (entityName): EntityInfo => {
                     if(entityName == null) return null
                     const info = entities[entityName]
@@ -77,14 +80,23 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
 
                 const getEntityName = () => {
                     if(isRelation){
-                        return getRelationInfo().entityName
+                        let relationInfo = getRelationInfo();
+                        if(relationInfo == null){
+                            console.log(`${namespace.join('.')} should be a relation, but could not access it`);
+                            return null;
+                        }
+                        return relationInfo.entityName
                     }else{
+                        if(entities[nsFrame] === undefined){
+                            console.log(`${nsFrame} is not an entity name. Using a relation at top level?`, );
+                            return null;
+                        }
                         return nsFrame;
                     }
                 }
                 const getParentEntityName = () => {
                     if(topLevel) return null;
-                    getParentState().entityName;
+                    return getParentState().entityName;
                 }
                 const getRelationInfo = () => {
                     if(!isRelation) return null;
@@ -93,8 +105,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     const parentEntityInfo = getEntityInfo(parentEntityName);
                     return parentEntityInfo.relations[nsFrame]
                 }
-                const getCurrentEntityInfo = () => getEntityInfo(getEntityName())
-                const getParentEntityInfo = () => getEntityInfo(getParentEntityName())
+
                 if(getLocalState() == null){
                     //Initialize local value
                     const entityName = _.last(namespace);
@@ -107,22 +118,36 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     }))
                     return null;
                 }
-
-
+                const entityInfo = getEntityInfo(getEntityName())
+                const parentEntityInfo = getEntityInfo(getParentEntityName())
+                const relationInfo = getRelationInfo();
+                if(entityInfo == null){
+                    return `${namespace.join('.')}`
+                }
+                if (isRelation) {
+                    if (parentEntityInfo == null) {
+                        return err(`parentEntityInfo could not be found for ${namespace.join('.')}`)
+                    }
+                    if(relationInfo == null){
+                        return err(`Could not find relationInfo for ${namespace.join('.')}`)
+                    }
+                }
                 return this.props.children({
-                    entityInfo: getCurrentEntityInfo(),
-                    parentEntityInfo: getParentEntityInfo(),
-                    onChange: onStateChange,
-                    info: getLocalInfo(),
+                    entityInfo,
+                    parentEntityInfo,
+                    relationInfo: getRelationInfo(),
+
                     state: getLocalState(),
-                    parentInfo: getParentLocalInfo(),
                     parentState: getParentState(),
+                    onChange: onStateChange,
+                    getEntityInfo: getEntityInfo,
                     namespace,
                     rootEntityId: args.entityId,
                     topLevel,
+                    isRelation,
                     navigate,
                     entities
-                })
+                } as EntityContextSpyRenderProps)
             }}
         </All>
     }

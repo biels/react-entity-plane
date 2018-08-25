@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import _ from "lodash";
 import EntityContextSpy from "./EntityContextSpy";
 import LoadingQuery from "./LoadingQuery";
-import {EntityInfo, EntityInfoKey, EntityQuery} from "./types/entities";
+import {EntityInfo, EntityInfoKey, EntityQuery, RelationInfo} from "./types/entities";
 import {Mutation} from "react-apollo";
 import {FetchPolicy, PureQueryOptions} from "apollo-client";
 import {DocumentNode} from "graphql";
@@ -49,26 +49,22 @@ class Entity extends Component<EntityProps> {
     render() {
         return <Namespace name={this.props.relation || this.props.name}>
             <EntityContextSpy>
-                {({info, parentInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, entities}) => {
-                    if(topLevel && this.props.name == null) {
-                        console.log(`Used top level <Entity/> without a name with relation ${this.props.relation}`, this.props);
-                        return null
-                    }
+                {({entityInfo, parentEntityInfo, relationInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo}) => { //parentRelationInfo can be added
                     const getInfo = (name: EntityInfoKey) => entities[name]
-                    const entityInfo = getInfo(state.entityName)
                     const selectedIndex = state.selectedIndex;
                     const editingIndex = state.editingIndex;
 
                     let single = false;
                     let query: EntityQuery;
                     let variables = {}
-                    if(this.props.relation && !topLevel){
-                        const parentEntityInfo = getInfo(parentState.entityName)
+                    if(isRelation){
+                        // Is a valid relation
                         if(parentState.selectedIndex == null){
                             return <NonIdealState title={'No hay ' + parentEntityInfo.display.singular.toLowerCase() + ' seleccionado/a'} icon={"select"}/>
                         }
                         // If it is a relation and is not top level
-                        let relation = parentEntityInfo.relations[this.props.relation];
+                        //let relation = parentEntityInfo.relations[this.props.relation];
+                        let relation: RelationInfo = relationInfo;
 
                         if(relation.type === "single"){
                             query = relation.queries.one
