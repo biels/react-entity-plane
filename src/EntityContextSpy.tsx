@@ -109,7 +109,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 if(getLocalState() == null){
                     //Initialize local value
                     const entityName = _.last(namespace);
-                    console.log({entityName, topLevel});
+                    // console.log({entityName, topLevel});
                     setTimeout(() => onStateChange({
                         entityName,
                         selectedIndex: null,

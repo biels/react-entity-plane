@@ -10,6 +10,7 @@ import {NonIdealState} from "@blueprintjs/core";
 import {NavigateParams} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import {Namespace} from "react-namespaces";
 import All from "react-namespaces/lib/All";
+import {err} from "./errorMessage";
 
 
 export interface EntityObject {
@@ -90,8 +91,7 @@ class Entity extends Component<EntityProps> {
                     }
 
                     if(query == null) {
-                        console.log('Could not find a query for ', namespace.join('.'));
-                        return null
+                        return err(`Could not find a query for ${namespace.join('.')}`)
                     }
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}>
                         {({data, refetch}) => {
