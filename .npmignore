@@ -2,6 +2,6 @@
 src
 tsconfig.json
 tslint.json
-.prettierrc
+../MedicalSoft/Invoices/invoices/invoices-app/.prettierrc
 jestconfig.json
 *.test.ts

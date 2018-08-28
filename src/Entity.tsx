@@ -22,6 +22,8 @@ export interface EntityRenderProps {
     selectedIndex: number | null,
     editingIndex: number | null
     editingId: number | string | null
+    editing: boolean
+    editSelected: () => void
     selectedItem: EntityObject
     // handleCreate: () => any
     // handleUpdate: () => any
@@ -32,10 +34,11 @@ export interface EntityRenderProps {
     update: (id: number | string | null, body: Object) => any
     updateEditing: (body: Object) => any
     selectIndex: (index: number | null) => any,
-    startEditing: (index: number | null) => any,
+    selectId: (id: number | null) => any,
+    startEditing: (index?: number | null) => any,
     cancelEdition: () => void
     refetch: () => void
-    openInOwnPage: (index: number, params?: Partial<NavigateParams>) => void
+    openInOwnPage: (index: number, params?: Partial<NavigateParams>, id?: boolean) => void
 }
 export interface EntityProps {
     name?: EntityInfoKey //Remove?
@@ -47,11 +50,13 @@ export interface EntityProps {
 
 
 class Entity extends Component<EntityProps> {
+    shouldComponentUpdate(){
+        return false;
+    }
     render() {
         return <Namespace name={this.props.relation || this.props.name}>
             <EntityContextSpy>
                 {({entityInfo, parentEntityInfo, relationInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo}) => { //parentRelationInfo can be added
-                    const getInfo = (name: EntityInfoKey) => entities[name]
                     const selectedIndex = state.selectedIndex;
                     const editingIndex = state.editingIndex;
 
@@ -70,8 +75,10 @@ class Entity extends Component<EntityProps> {
                         if(relation.type === "single"){
                             query = relation.queries.one
                             single = true
+                            if(query == null) return err(`Could not find a 'one' query for ${namespace.join('.')}`)
                         }else{
                             query = relation.queries.all
+                            if(query == null) return err(`Could not find an 'all' query for ${namespace.join('.')}`)
                         }
                         variables = {id: parentState.selectedId}
 
@@ -88,6 +95,7 @@ class Entity extends Component<EntityProps> {
                     }
                     else{
                         query = entityInfo.queries.all
+                        if(query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
                     }
 
                     if(query == null) {
@@ -113,6 +121,14 @@ class Entity extends Component<EntityProps> {
                                     this.forceUpdate()
                                 }
                             }
+                            const selectId = (id: number | null) => {
+                                if(id == null){
+                                    selectIndex(null)
+                                    return
+                                }
+                                const index = _.findIndex(items, (it: any) => it.id === id)
+                                selectIndex(index)
+                            }
                             //If single select 0
                             if(single) selectIndex(0);
                             const fixSelection = () => {
@@ -126,17 +142,18 @@ class Entity extends Component<EntityProps> {
                             }
                             fixSelection()
                             const setEditIndex = (newIndex) => {
+                                if(newIndex === undefined) newIndex = selectedIndex
                                 if(newIndex != editingIndex){
                                     onChange({...state, editingIndex: newIndex})
                                     this.forceUpdate()
                                 }
                             }
                             const cancelEdition = () => setEditIndex(null)
-                            const openInOwnPage = (index: number, params?: Partial<NavigateParams>) => {
-                                index = _.clamp(index, 0, items.length -1)
+                            const openInOwnPage = (index: number, params?: Partial<NavigateParams>, id?: boolean) => {
+                                if(!id) index = _.clamp(index, 0, items.length -1)
                                 const defaultParams: NavigateParams = {
                                     to: entityInfo.name,
-                                    args: {entityId: items[index].id},
+                                    args: {entityId: id ? index : items[index].id},
                                     inNewTab: false,
                                     focusNewTab: true
                                 }
@@ -175,6 +192,7 @@ class Entity extends Component<EntityProps> {
                                         // selectIndex(null)
                                     }
                                     let handleRemoveSelected = () => handleRemove(selectedIndex)
+                                    let handleEditSelected = () => setEditIndex(selectedIndex)
                                     let handleUpdateEditing = (body: Object) => handleUpdate(editingIndex, body)
 
                                     return this.props.children({ // TODO Add mutations
@@ -183,7 +201,10 @@ class Entity extends Component<EntityProps> {
                                         selectedItem,
                                         editingIndex,
                                         editingId: editingItemId,
+                                        editing: editingIndex === selectedIndex,
+                                        editSelected: handleEditSelected,
                                         selectIndex,
+                                        selectId,
                                         create: handleCreate,
                                         update: handleUpdate,
                                         updateEditing: handleUpdateEditing,

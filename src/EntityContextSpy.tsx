@@ -28,6 +28,7 @@ export interface EntityContextSpyRenderProps {
     navigate: ProvidedNavigationContext['navigate']
     entities: EntitiesObject
 }
+
 export interface EntityContextSpyProps {
     children: (props: EntityContextSpyRenderProps) => any
 }
@@ -39,18 +40,18 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
             NavigationSpy, PageContextSpy, EntityContextConsumer, Namespace, EntityPlaneConsumer
         ]}>
             {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entities: EntitiesObject) => {
-                if(entities == null){
+                if (entities == null) {
                     return err(`Please use <Entity/> inside an entity context`);
                 }
-                if(namespace.length === 0) {
+                if (namespace.length === 0) {
                     return err(`Used top level <Entity/> without a name`);
                 }
 
                 //console.log('[EntityContextSpy] Namespace', namespace.join('.'));
                 const getEntityInfo = (entityName): EntityInfo => {
-                    if(entityName == null) return null
+                    if (entityName == null) return null
                     const info = entities[entityName]
-                    if(info == null) console.log(`Tried to access unknown entity ${entityName}`);
+                    if (info == null) console.log(`Tried to access unknown entity ${entityName}`);
                     return info
 
                 }
@@ -62,11 +63,19 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const parentFieldPath = getFieldPath(parentNamespace); // Universal path (in info and state)
                 const getParentLocalInfo = () => _.get(entityContext.value.infoNodes, parentFieldPath);
                 const getParentState = (): EntityPlaneStateNode => _.get(entityContext.value.stateNodes, parentFieldPath);
-                const onStateChange = (newLocalState) => {
+                const onStateChange = (newLocalState, delayed?: boolean) => {
                     //On state change
-                    const stateTemplate = _.set({}, fieldPath, newLocalState)
+
+                    const stateTemplate = _.set(_.cloneDeep(entityContext.value.stateNodes), fieldPath, newLocalState)
                     let newState = _.merge({}, entityContext.value.stateNodes, stateTemplate);
-                    entityContext.onStateChange(newState)
+                    // console.log('onStateChange', newState, stateTemplate);
+                    if (delayed) {
+                        _.set(entityContext.value.stateNodes, fieldPath, newLocalState)
+                        // setTimeout(() => entityContext.onStateChange(stateTemplate, true))
+                        // TODO Check that it actually works
+                    } else {
+                        entityContext.onStateChange(stateTemplate)
+                    }
                 };
                 const topLevel = parentNamespace.length == 0;
                 const isRelation = !topLevel;
@@ -79,56 +88,56 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
 
 
                 const getEntityName = () => {
-                    if(isRelation){
+                    if (isRelation) {
                         let relationInfo = getRelationInfo();
-                        if(relationInfo == null){
+                        if (relationInfo == null) {
                             console.log(`${namespace.join('.')} should be a relation, but could not access it`);
                             return null;
                         }
                         return relationInfo.entityName
-                    }else{
-                        if(entities[nsFrame] === undefined){
-                            console.log(`${nsFrame} is not an entity name. Using a relation at top level?`, );
+                    } else {
+                        if (entities[nsFrame] === undefined) {
+                            console.log(`${nsFrame} is not an entity name. Using a relation at top level?`,);
                             return null;
                         }
                         return nsFrame;
                     }
                 }
                 const getParentEntityName = () => {
-                    if(topLevel) return null;
+                    if (topLevel) return null;
                     return getParentState().entityName;
                 }
                 const getRelationInfo = () => {
-                    if(!isRelation) return null;
+                    if (!isRelation) return null;
                     const parentEntityState = getParentState();
                     const parentEntityName = parentEntityState.entityName;
                     const parentEntityInfo = getEntityInfo(parentEntityName);
                     return parentEntityInfo.relations[nsFrame]
                 }
 
-                if(getLocalState() == null){
+                if (getLocalState() == null) {
                     //Initialize local value
                     const entityName = _.last(namespace);
                     // console.log({entityName, topLevel});
-                    setTimeout(() => onStateChange({
+                    onStateChange({
                         entityName,
                         selectedIndex: null,
                         editingIndex: null,
                         relations: {}
-                    }))
+                    }, true)
                     return null;
                 }
                 const entityInfo = getEntityInfo(getEntityName())
                 const parentEntityInfo = getEntityInfo(getParentEntityName())
                 const relationInfo = getRelationInfo();
-                if(entityInfo == null){
+                if (entityInfo == null) {
                     return `${namespace.join('.')}`
                 }
                 if (isRelation) {
                     if (parentEntityInfo == null) {
                         return err(`parentEntityInfo could not be found for ${namespace.join('.')}`)
                     }
-                    if(relationInfo == null){
+                    if (relationInfo == null) {
                         return err(`Could not find relationInfo for ${namespace.join('.')}`)
                     }
                 }
