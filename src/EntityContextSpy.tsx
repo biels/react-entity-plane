@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import _ from "lodash";
 import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from "./EntityContext";
 import {Namespace} from "react-namespaces";
-import {EntityPlaneConsumer} from "./EntityPlaneProvider";
+import {EntityPlaneConsumer, EntityPlaneProvidedObject} from "./EntityPlaneProvider";
 import {EntitiesObject, EntityInfo, RelationInfo} from "./types/entities";
 import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
@@ -27,6 +27,7 @@ export interface EntityContextSpyRenderProps {
     // getRelation: (relationName: string) => Object
     navigate: ProvidedNavigationContext['navigate']
     entities: EntitiesObject
+    onForeignKeyError: (error) => any
 }
 
 export interface EntityContextSpyProps {
@@ -39,7 +40,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
         return <All of={[
             NavigationSpy, PageContextSpy, EntityContextConsumer, Namespace, EntityPlaneConsumer
         ]}>
-            {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entities: EntitiesObject) => {
+            {({navigate}, {args}, entityContext: ProvidedEntityContext, namespace, entityPlane: EntityPlaneProvidedObject) => {
+                const entities = entityPlane.entities;
                 if (entities == null) {
                     return err(`Please use <Entity/> inside an entity context`);
                 }
@@ -155,7 +157,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     topLevel,
                     isRelation,
                     navigate,
-                    entities
+                    entities,
+                    onForeignKeyError: entityPlane.onForeignKeyError
                 } as EntityContextSpyRenderProps)
             }}
         </All>

@@ -56,7 +56,7 @@ class Entity extends Component<EntityProps> {
     render() {
         return <Namespace name={this.props.relation || this.props.name}>
             <EntityContextSpy>
-                {({entityInfo, parentEntityInfo, relationInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo}) => { //parentRelationInfo can be added
+                {({entityInfo, parentEntityInfo, relationInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError}) => { //parentRelationInfo can be added
                     const selectedIndex = state.selectedIndex;
                     const editingIndex = state.editingIndex;
 
@@ -161,6 +161,7 @@ class Entity extends Component<EntityProps> {
                             }
                             const handleError = (e) => {
                                 console.log('Mutation error', e);
+                                onForeignKeyError(e)
                             }
                             const handleRefetch = () => refetch
                             const refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}]

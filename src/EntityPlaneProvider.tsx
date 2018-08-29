@@ -6,11 +6,16 @@ import {ProvidedEntityContext} from "./EntityContext";
 
 export interface EntityPlaneProviderProps {
     entities: EntitiesObject
+    onForeignKeyError: (error) => any
 }
-const {Provider, Consumer: EntityPlaneConsumer} = React.createContext<EntitiesObject>(null);
+export interface EntityPlaneProvidedObject {
+    entities: EntitiesObject
+    onForeignKeyError: (error) => any
+}
+const {Provider, Consumer: EntityPlaneConsumer} = React.createContext<EntityPlaneProvidedObject>(null);
 class EntityPlaneProvider extends Component<EntityPlaneProviderProps> {
     render() {
-        return <Provider value={this.props.entities}>
+        return <Provider value={{entities: this.props.entities, onForeignKeyError: this.props.onForeignKeyError}}>
             {this.props.children}
         </Provider>
     }
