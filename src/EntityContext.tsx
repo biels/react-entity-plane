@@ -9,6 +9,7 @@ export interface EntityPlaneStateNode {
     selectedIndex: number | null,
     editingIndex: number | null,
     selectedId: number | string | null,
+    state: any
     relations: {
         [relationName: string]: EntityPlaneStateNode
     }

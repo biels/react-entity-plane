@@ -11,6 +11,7 @@ import {NavigateParams} from "react-navigation-plane/lib/NavigationContext/Navig
 import {Namespace} from "react-namespaces";
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
+import {on} from "cluster";
 
 
 export interface EntityObject {
@@ -38,12 +39,15 @@ export interface EntityRenderProps {
     startEditing: (index?: number | null) => any,
     cancelEdition: () => void
     refetch: () => void
+    single: boolean
     openInOwnPage: (index: number, params?: Partial<NavigateParams>, id?: boolean) => void
+    entityState: any,
+    setEntityState: (newEntityState: any, update?: boolean) => any
 }
 export interface EntityProps {
     name?: EntityInfoKey //Remove?
     relation?: string
-    id?: number | string
+    ids?: number | string
     fetchPolicy?: FetchPolicy
     children: (props: EntityRenderProps) => any
 }
@@ -60,10 +64,15 @@ class Entity extends Component<EntityProps> {
                     const selectedIndex = state.selectedIndex;
                     const editingIndex = state.editingIndex;
 
+                    const setEntityState = (newEntityState, update: boolean = true) => {
+                        onChange({...state, state: _.merge({}, state.state, newEntityState)}, update)
+                    }
+                    const entityState = state.state;
+
                     let single = false;
                     let query: EntityQuery;
-                    let variables = {}
-                    if(isRelation){
+                    let variables = {};
+                    if(isRelation && this.props.ids == null){
                         // Is a valid relation
                         if(parentState.selectedIndex == null){
                             return <NonIdealState title={'No hay ' + parentEntityInfo.display.singular.toLowerCase() + ' seleccionado/a'} icon={"select"}/>
@@ -73,11 +82,11 @@ class Entity extends Component<EntityProps> {
                         let relation: RelationInfo = relationInfo;
 
                         if(relation.type === "single"){
-                            query = relation.queries.one
-                            single = true
+                            query = relation.queries.one;
+                            single = true;
                             if(query == null) return err(`Could not find a 'one' query for ${namespace.join('.')}`)
                         }else{
-                            query = relation.queries.all
+                            query = relation.queries.all;
                             if(query == null) return err(`Could not find an 'all' query for ${namespace.join('.')}`)
                         }
                         variables = {id: parentState.selectedId}
@@ -89,12 +98,18 @@ class Entity extends Component<EntityProps> {
                             console.error(message);
                             return message
                         }
-                        query = entityInfo.queries.one
-                        variables = {id: rootEntityId} // Take it from the page instead?
+                        query = entityInfo.queries.one;
+                        variables = {id: rootEntityId}; // Take it from the page instead?
                         single = true
+                    }else if(this.props.ids != null){
+                        if(entityInfo.queries.one == null) return err(`Entity ${entityInfo.name} does not have a 'one' query`);
+                        query = entityInfo.queries.one;
+                        variables = {id: this.props.ids};
+                        single = true;
+                        console.debug('Singlifying entity with id', this.props.ids);
                     }
                     else{
-                        query = entityInfo.queries.all
+                        query = entityInfo.queries.all;
                         if(query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
                     }
 
@@ -103,68 +118,68 @@ class Entity extends Component<EntityProps> {
                     }
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}>
                         {({data, refetch}) => {
-                            let items = _.get(data, query.selector, null)
+                            let items = _.get(data, query.selector, null);
                             if(items == null){
                                 if(this.props.fetchPolicy == "cache-only")
-                                    return <div>Waiting...</div>
+                                    return <div>Waiting...</div>;
                                 return <div>Bad selector {query.selector}</div>
                             }
                             if(single) {
                                 items = [items];
                             }
-                            const selectedItem = items[selectedIndex]
+                            const selectedItem = items[selectedIndex];
                             const editingItem = _.get(items, editingIndex, null);
                             const editingItemId = _.get(editingItem, 'id', null);
                             const selectIndex = (newIndex) => {
                                 if(newIndex != selectedIndex){
-                                    onChange({...state, selectedIndex: newIndex, selectedId: _.get(items[newIndex], 'id', null)})
+                                    onChange({...state, selectedIndex: newIndex, selectedId: _.get(items[newIndex], 'id', null)});
                                     this.forceUpdate()
                                 }
-                            }
+                            };
                             const selectId = (id: number | null) => {
                                 if(id == null){
-                                    selectIndex(null)
+                                    selectIndex(null);
                                     return
                                 }
-                                const index = _.findIndex(items, (it: any) => it.id === id)
+                                const index = _.findIndex(items, (it: any) => it.id === id);
                                 selectIndex(index)
-                            }
+                            };
                             //If single select 0
                             if(single) selectIndex(0);
                             const fixSelection = () => {
                                 if(selectedIndex == null) return;
                                 if(items.length === 0){
-                                    selectIndex(null)
+                                    selectIndex(null);
                                     return
                                 }
-                                const validIndex = Math.max(0, Math.min(selectedIndex, items.length - 1))
+                                const validIndex = Math.max(0, Math.min(selectedIndex, items.length - 1));
                                 selectIndex(validIndex)
-                            }
-                            fixSelection()
+                            };
+                            fixSelection();
                             const setEditIndex = (newIndex) => {
-                                if(newIndex === undefined) newIndex = selectedIndex
+                                if(newIndex === undefined) newIndex = selectedIndex;
                                 if(newIndex != editingIndex){
-                                    onChange({...state, editingIndex: newIndex})
+                                    onChange({...state, editingIndex: newIndex});
                                     this.forceUpdate()
                                 }
-                            }
-                            const cancelEdition = () => setEditIndex(null)
+                            };
+                            const cancelEdition = () => setEditIndex(null);
                             const openInOwnPage = (index: number, params?: Partial<NavigateParams>, id?: boolean) => {
-                                if(!id) index = _.clamp(index, 0, items.length -1)
+                                if(!id) index = _.clamp(index, 0, items.length -1);
                                 const defaultParams: NavigateParams = {
                                     to: entityInfo.name,
                                     args: {entityId: id ? index : items[index].id},
                                     inNewTab: false,
                                     focusNewTab: true
-                                }
+                                };
                                 navigate(Object.assign({}, defaultParams, params))
-                            }
+                            };
                             const handleError = (e) => {
                                 console.log('Mutation error', e);
                                 onForeignKeyError(e)
-                            }
-                            const handleRefetch = () => refetch
-                            const refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}]
+                            };
+                            const handleRefetch = () => refetch;
+                            const refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}];
 
                             return <All
                                 props={{onError: handleError, refetchQueries}}
@@ -177,24 +192,25 @@ class Entity extends Component<EntityProps> {
                                     let handleCreate = (body) => {
                                         if (body == null || body == {}) return;
                                         createMutation({variables: {input: body}});
-                                    }
+                                    };
                                     let handleUpdate = (index = selectedIndex, body) => {
                                         if (index == null || body == null || body == {}) return;
                                         let id = items[index].id;
                                         if (id == null) return;
                                         updateMutation({variables: {id, input: body}});
-                                    }
+                                    };
                                     let handleRemove = (index) => {
                                         if (index == null) return;
                                         let id = items[index].id;
                                         if (id == null) return;
                                         deleteMutation({variables: {id}});
+                                        this.forceUpdate()
                                         // If unselect on delete
                                         // selectIndex(null)
-                                    }
-                                    let handleRemoveSelected = () => handleRemove(selectedIndex)
-                                    let handleEditSelected = () => setEditIndex(selectedIndex)
-                                    let handleUpdateEditing = (body: Object) => handleUpdate(editingIndex, body)
+                                    };
+                                    let handleRemoveSelected = () => handleRemove(selectedIndex);
+                                    let handleEditSelected = () => setEditIndex(selectedIndex);
+                                    let handleUpdateEditing = (body: Object) => handleUpdate(editingIndex, body);
 
                                     return this.props.children({ // TODO Add mutations
                                         items,
@@ -214,7 +230,10 @@ class Entity extends Component<EntityProps> {
                                         startEditing: setEditIndex,
                                         cancelEdition,
                                         refetch: handleRefetch,
-                                        openInOwnPage
+                                        single,
+                                        openInOwnPage,
+                                        setEntityState,
+                                        entityState
                                     })
                                 }}
                             </All>

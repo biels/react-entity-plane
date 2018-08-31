@@ -30,8 +30,14 @@ export interface RelationInfo {
     type?: 'single' | 'multi'
     queries: EntityQueries
 }
+export interface EntityField {
+    name: string
+    icon?: string
+    relation?: false | 'single' | 'multi'
+}
 export interface EntityInfo {
     name: EntityInfoKey
+    fields?: EntityField[]
     queries: EntityQueries
     mutations: EntityMutations
     display: {

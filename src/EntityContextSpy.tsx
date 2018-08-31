@@ -18,7 +18,7 @@ export interface EntityContextSpyRenderProps {
     // parentRelationInfo: RelationInfo, //Implement if needed
     state: EntityPlaneStateNode,
     parentState: EntityPlaneStateNode
-    onChange: (newValue: EntityPlaneStateNode) => any
+    onChange: (newValue: EntityPlaneStateNode, update?: boolean) => any
     getEntityInfo: (entityName: string) => EntityInfo
     namespace: string[],
     rootEntityId: string | number
@@ -65,13 +65,13 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const parentFieldPath = getFieldPath(parentNamespace); // Universal path (in info and state)
                 const getParentLocalInfo = () => _.get(entityContext.value.infoNodes, parentFieldPath);
                 const getParentState = (): EntityPlaneStateNode => _.get(entityContext.value.stateNodes, parentFieldPath);
-                const onStateChange = (newLocalState, delayed?: boolean) => {
+                const onStateChange = (newLocalState, update: boolean = true) => {
                     //On state change
 
                     const stateTemplate = _.set(_.cloneDeep(entityContext.value.stateNodes), fieldPath, newLocalState)
                     let newState = _.merge({}, entityContext.value.stateNodes, stateTemplate);
                     // console.log('onStateChange', newState, stateTemplate);
-                    if (delayed) {
+                    if (!update) {
                         _.set(entityContext.value.stateNodes, fieldPath, newLocalState)
                         // setTimeout(() => entityContext.onStateChange(stateTemplate, true))
                         // TODO Check that it actually works
@@ -125,8 +125,9 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         entityName,
                         selectedIndex: null,
                         editingIndex: null,
-                        relations: {}
-                    }, true)
+                        relations: {},
+                        state: {}
+                    }, false)
                     return null;
                 }
                 const entityInfo = getEntityInfo(getEntityName())
