@@ -76,7 +76,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         // setTimeout(() => entityContext.onStateChange(stateTemplate, true))
                         // TODO Check that it actually works
                     } else {
-                        entityContext.onStateChange(stateTemplate)
+                        entityContext.onStateChange(stateTemplate, true)
+                        console.log('>>>> onStateChange', stateTemplate);
                     }
                 };
                 const topLevel = parentNamespace.length == 0;
