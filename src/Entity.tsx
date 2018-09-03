@@ -54,9 +54,9 @@ export interface EntityProps {
 
 
 class Entity extends Component<EntityProps> {
-    shouldComponentUpdate(){
-        return false;
-    }
+    // shouldComponentUpdate(){
+    //     return false;
+    // }
     render() {
         return <Namespace name={this.props.relation || this.props.name}>
             <EntityContextSpy>

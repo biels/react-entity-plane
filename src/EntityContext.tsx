@@ -49,7 +49,7 @@ class EntityContextProvider extends Component<EntityContextProviderProps> {
         console.log(`Updating ${count} times`,  detailedDiff(this.state.stateNodes, newValue));
         this.setState({infoNodes: this.state.infoNodes, stateNodes: newValue}) // Merge?
         count++;
-        if(force) this.forceUpdate(() => console.log('Forced update'));
+        //if(force) this.forceUpdate(() => console.log('Forced update'));
     }
     render() {
         return (
