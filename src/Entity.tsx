@@ -29,10 +29,11 @@ export interface EntityRenderProps {
     // handleCreate: () => any
     // handleUpdate: () => any
     // handleDelete: () => any
-    remove: (id: number | string | null) => any
+    remove: (index: number) => any
     removeSelected: () => any
     create: (body: Object) => any
-    update: (id: number | string | null, body: Object) => any
+    update: (index: number, body: Object) => any
+    updateId: (id: number | string | null, body: Object) => any
     updateEditing: (body: Object) => any
     selectIndex: (index: number | null) => any,
     selectId: (id: number | null) => any,
@@ -119,14 +120,20 @@ class Entity extends Component<EntityProps> {
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}>
                         {({data, refetch}) => {
                             let items = _.get(data, query.selector, null);
+
+                            // let items = _.sortBy(unsortedItems, ['id']);
                             if(items == null){
                                 if(this.props.fetchPolicy == "cache-only")
                                     return <div>Waiting...</div>;
                                 return <div>Bad selector {query.selector}</div>
                             }
+
                             if(single) {
                                 items = [items];
                             }
+
+                            items = _.sortBy(items, ['id'])
+
                             const selectedItem = items[selectedIndex];
                             const editingItem = _.get(items, editingIndex, null);
                             const editingItemId = _.get(editingItem, 'id', null);
@@ -199,6 +206,10 @@ class Entity extends Component<EntityProps> {
                                         if (id == null) return;
                                         updateMutation({variables: {id, input: body}});
                                     };
+                                    let handleUpdateId = (id: number, body) => {
+                                        if (id == null || body == null || body == {}) return;
+                                        updateMutation({variables: {id, input: body}});
+                                    };
                                     let handleRemove = (index) => {
                                         if (index == null) return;
                                         let id = items[index].id;
@@ -224,6 +235,7 @@ class Entity extends Component<EntityProps> {
                                         selectId,
                                         create: handleCreate,
                                         update: handleUpdate,
+                                        updateId: handleUpdateId,
                                         updateEditing: handleUpdateEditing,
                                         remove: handleRemove,
                                         removeSelected: handleRemoveSelected,
