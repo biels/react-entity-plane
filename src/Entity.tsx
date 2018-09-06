@@ -44,6 +44,7 @@ export interface EntityRenderProps {
     openInOwnPage: (index: number, params?: Partial<NavigateParams>, id?: boolean) => void
     entityState: any,
     setEntityState: (newEntityState: any, update?: boolean) => any
+    getLocalState: () => object
 }
 export interface EntityProps {
     name?: EntityInfoKey //Remove?
@@ -51,6 +52,8 @@ export interface EntityProps {
     ids?: number | string
     fetchPolicy?: FetchPolicy
     children: (props: EntityRenderProps) => any
+    root?: boolean
+
 }
 
 
@@ -59,14 +62,15 @@ class Entity extends Component<EntityProps> {
     //     return false;
     // }
     render() {
-        return <Namespace name={this.props.relation || this.props.name}>
+        let processedName = (this.props.name != null ? `/${this.props.name}` : undefined);
+        return <Namespace name={this.props.relation || processedName}>
             <EntityContextSpy>
-                {({entityInfo, parentEntityInfo, relationInfo, state, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError}) => { //parentRelationInfo can be added
+                {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError}) => { //parentRelationInfo can be added
                     const selectedIndex = state.selectedIndex;
                     const editingIndex = state.editingIndex;
 
                     const setEntityState = (newEntityState, update: boolean = true) => {
-                        onChange({...state, state: _.merge({}, state.state, newEntityState)}, update)
+                        onChange({...state, state: {...state.state, ...newEntityState}}, update)
                     }
                     const entityState = state.state;
 
@@ -92,7 +96,7 @@ class Entity extends Component<EntityProps> {
                         }
                         variables = {id: parentState.selectedId}
 
-                    }else if(topLevel && rootEntityId != null){
+                    }else if(this.props.root && topLevel && rootEntityId != null){
                         //Use Single entity (one) query
                         if(entityInfo.queries.one == null){
                             let message = `Entity ${entityInfo.name} does not have a 'one' query`;
@@ -125,7 +129,7 @@ class Entity extends Component<EntityProps> {
                             if(items == null){
                                 if(this.props.fetchPolicy == "cache-only")
                                     return <div>Waiting...</div>;
-                                return <div>Bad selector {query.selector}</div>
+                                return <div>Bad selector {query.selector}, items: {items}</div>
                             }
 
                             if(single) {
@@ -245,7 +249,8 @@ class Entity extends Component<EntityProps> {
                                         single,
                                         openInOwnPage,
                                         setEntityState,
-                                        entityState
+                                        entityState,
+                                        getLocalState
                                     })
                                 }}
                             </All>

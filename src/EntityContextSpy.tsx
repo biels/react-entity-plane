@@ -9,7 +9,7 @@ import NavigationSpy from "react-navigation-plane/lib/NavigationContext/Navigati
 import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
-
+import {diff, addedDiff, deletedDiff, updatedDiff, detailedDiff} from 'deep-object-diff';
 
 export interface EntityContextSpyRenderProps {
     entityInfo: EntityInfo
@@ -28,6 +28,7 @@ export interface EntityContextSpyRenderProps {
     navigate: ProvidedNavigationContext['navigate']
     entities: EntitiesObject
     onForeignKeyError: (error) => any
+    getLocalState: () => object
 }
 
 export interface EntityContextSpyProps {
@@ -67,7 +68,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const getParentState = (): EntityPlaneStateNode => _.get(entityContext.value.stateNodes, parentFieldPath);
                 const onStateChange = (newLocalState, update: boolean = true) => {
                     //On state change
-
+                    // console.log('Updating local state: ', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
+                    // const initial = _.get(newLocalState, 'state.pickerOpen')
                     const stateTemplate = _.set(_.cloneDeep(entityContext.value.stateNodes), fieldPath, newLocalState)
                     let newState = _.merge({}, entityContext.value.stateNodes, stateTemplate);
                     // console.log('onStateChange', newState, stateTemplate);
@@ -79,6 +81,13 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         entityContext.onStateChange(stateTemplate, true)
                         // console.log('>>>> onStateChange', stateTemplate);
                     }
+                    // const final = _.get(getLocalState(), 'state.pickerOpen')
+                     // console.log('State diff', initial, final);
+                    // if(!_.isEqual(newLocalState, getLocalState())){
+                    //     console.error('Error updating states expected / actual:', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
+                    // }else {
+                    //     console.info('State updated correctly!');
+                    // }
                 };
                 const topLevel = parentNamespace.length == 0;
                 const isRelation = !topLevel;
@@ -151,6 +160,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     relationInfo: getRelationInfo(),
 
                     state: getLocalState(),
+                    getLocalState: getLocalState,
                     parentState: getParentState(),
                     onChange: onStateChange,
                     getEntityInfo: getEntityInfo,
