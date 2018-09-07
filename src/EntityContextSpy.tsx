@@ -126,10 +126,16 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     const parentEntityInfo = getEntityInfo(parentEntityName);
                     return parentEntityInfo.relations[nsFrame]
                 }
-
+                const isValidEntityName = (entityName) => {
+                    return _.get(entities, entityName) != null
+                }
                 if (getLocalState() == null) {
                     //Initialize local value
-                    const entityName = _.last(namespace);
+
+                    const entityName = isRelation ? getRelationInfo().entityName : nsFrame;
+                    if(!isValidEntityName(entityName)){
+                        return err(`${entityName} is not a valid entity name. Valid names are: ${_.keysIn(entities).toString()}`)
+                    }
                     // console.log({entityName, topLevel});
                     onStateChange({
                         entityName,
