@@ -37,6 +37,7 @@ export interface EntityField {
 }
 export interface EntityInfo {
     name: EntityInfoKey
+    type?: 'single' | 'multi'
     fields?: EntityField[]
     queries: EntityQueries
     mutations: EntityMutations

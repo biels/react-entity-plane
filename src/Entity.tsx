@@ -53,7 +53,7 @@ export interface EntityProps {
     fetchPolicy?: FetchPolicy
     children: (props: EntityRenderProps) => any
     root?: boolean
-
+    query?: string
 }
 
 
@@ -106,7 +106,7 @@ class Entity extends Component<EntityProps> {
                         query = entityInfo.queries.one;
                         variables = {id: rootEntityId}; // Take it from the page instead?
                         single = true
-                    }else if(this.props.ids != null){
+                    }else if(this.props.ids != null || entityInfo.type === "single"){
                         if(entityInfo.queries.one == null) return err(`Entity ${entityInfo.name} does not have a 'one' query`);
                         query = entityInfo.queries.one;
                         variables = {id: this.props.ids};
