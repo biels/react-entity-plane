@@ -12,12 +12,15 @@ import {Namespace} from "react-namespaces";
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
 import {on} from "cluster";
+import {selectLimit} from "async";
 
 
 export interface EntityObject {
     id: number | string | null
+
     [k: string]: any
 }
+
 export interface EntityRenderProps {
     items: EntityObject[]
     selectedIndex: number | null,
@@ -29,12 +32,12 @@ export interface EntityRenderProps {
     // handleCreate: () => any
     // handleUpdate: () => any
     // handleDelete: () => any
-    remove: (index: number) => any
-    removeSelected: () => any
-    create: (body: Object) => any
-    update: (index: number, body: Object) => any
-    updateId: (id: number | string | null, body: Object) => any
-    updateEditing: (body: Object) => any
+    remove: (index: number, onCompleted?: (data: any) => void) => any
+    removeSelected: (onCompleted?: (data: any) => void) => any
+    create: (body: Object, onCompleted?: (data: any) => void) => any
+    update: (index: number, body: Object, onCompleted?: (data: any) => void) => any
+    updateId: (id: number | string | null, body: Object, onCompleted?: (data: any) => void) => any
+    updateEditing: (body: Object, onCompleted?: (data: any) => void) => any
     selectIndex: (index: number | null) => any,
     selectId: (id: number | null) => any,
     startEditing: (index?: number | null) => any,
@@ -46,17 +49,19 @@ export interface EntityRenderProps {
     setEntityState: (newEntityState: any, update?: boolean) => any
     getLocalState: () => object
 }
+
 export interface EntityProps {
     name?: EntityInfoKey //Remove?
     relation?: string
     ids?: number | string
     fetchPolicy?: FetchPolicy
+    additionalRefetchQueries?: [{query, variables}]
     children: (props: EntityRenderProps) => any
     root?: boolean
     query?: string
 }
 
-
+let lastCreated = {id: null, path: null};
 class Entity extends Component<EntityProps> {
     // shouldComponentUpdate(){
     //     return false;
@@ -77,28 +82,31 @@ class Entity extends Component<EntityProps> {
                     let single = false;
                     let query: EntityQuery;
                     let variables = {};
-                    if(isRelation && this.props.ids == null){
+                    let parentRefetchQuery = null;
+                    if (isRelation && this.props.ids == null) {
                         // Is a valid relation
-                        if(parentState.selectedIndex == null){
-                            return <NonIdealState title={'No hay ' + parentEntityInfo.display.singular.toLowerCase() + ' seleccionado/a'} icon={"select"}/>
+                        if (parentState.selectedIndex == null) {
+                            return <NonIdealState
+                                title={'No hay ' + parentEntityInfo.display.singular.toLowerCase() + ' seleccionado/a'}
+                                icon={"select"}/>
                         }
                         // If it is a relation and is not top level
                         //let relation = parentEntityInfo.relations[this.props.relation];
                         let relation: RelationInfo = relationInfo;
 
-                        if(relation.type === "single"){
+                        if (relation.type === "single") {
                             query = relation.queries.one;
                             single = true;
-                            if(query == null) return err(`Could not find a 'one' query for ${namespace.join('.')}`)
-                        }else{
+                            if (query == null) return err(`Could not find a 'one' query for ${namespace.join('.')}`)
+                        } else {
                             query = relation.queries.all;
-                            if(query == null) return err(`Could not find an 'all' query for ${namespace.join('.')}`)
+                            if (query == null) return err(`Could not find an 'all' query for ${namespace.join('.')}`)
                         }
                         variables = {id: parentState.selectedId}
-
-                    }else if(this.props.root && topLevel && rootEntityId != null){
+                        if (relation.refetchParent) parentRefetchQuery = parentEntityInfo.type === 'single' ? parentEntityInfo.queries.one : parentEntityInfo.queries.all
+                    } else if (this.props.root && topLevel && rootEntityId != null) {
                         //Use Single entity (one) query
-                        if(entityInfo.queries.one == null){
+                        if (entityInfo.queries.one == null) {
                             let message = `Entity ${entityInfo.name} does not have a 'one' query`;
                             console.error(message);
                             return message
@@ -106,33 +114,34 @@ class Entity extends Component<EntityProps> {
                         query = entityInfo.queries.one;
                         variables = {id: rootEntityId}; // Take it from the page instead?
                         single = true
-                    }else if(this.props.ids != null || entityInfo.type === "single"){
-                        if(entityInfo.queries.one == null) return err(`Entity ${entityInfo.name} does not have a 'one' query`);
+                    } else if (this.props.ids != null || entityInfo.type === "single") {
+                        if (entityInfo.queries.one == null) return err(`Entity ${entityInfo.name} does not have a 'one' query`);
                         query = entityInfo.queries.one;
                         variables = {id: this.props.ids};
                         single = true;
                         console.debug('Singlifying entity with id', this.props.ids);
                     }
-                    else{
+                    else {
                         query = entityInfo.queries.all;
-                        if(query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
+                        if (query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
                     }
 
-                    if(query == null) {
+                    if (query == null) {
                         return err(`Could not find a query for ${namespace.join('.')}`)
                     }
+                    // setEntityState({...state, query}, false)
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}>
                         {({data, refetch}) => {
                             let items = _.get(data, query.selector, null);
 
                             // let items = _.sortBy(unsortedItems, ['id']);
-                            if(items == null){
-                                if(this.props.fetchPolicy == "cache-only")
+                            if (items == null) {
+                                if (this.props.fetchPolicy == "cache-only")
                                     return <div>Waiting...</div>;
                                 return <div>Bad selector {query.selector}, items: {items}</div>
                             }
 
-                            if(single) {
+                            if (single) {
                                 items = [items];
                             }
 
@@ -142,13 +151,21 @@ class Entity extends Component<EntityProps> {
                             const editingItem = _.get(items, editingIndex, null);
                             const editingItemId = _.get(editingItem, 'id', null);
                             const selectIndex = (newIndex) => {
-                                if(newIndex != selectedIndex){
-                                    onChange({...state, selectedIndex: newIndex, selectedId: _.get(items[newIndex], 'id', null)});
+                                if (newIndex != selectedIndex) {
+                                    onChange({
+                                        ...state,
+                                        selectedIndex: newIndex,
+                                        selectedId: _.get(items[newIndex], 'id', null)
+                                    });
                                     this.forceUpdate()
                                 }
                             };
+                            const selectNextId = () => {
+                                const nextId = _.max(_.map(items, i => items.id)) + 1
+                                selectIndex(nextId)
+                            }
                             const selectId = (id: number | null) => {
-                                if(id == null){
+                                if (id == null) {
                                     selectIndex(null);
                                     return
                                 }
@@ -156,11 +173,17 @@ class Entity extends Component<EntityProps> {
                                 selectIndex(index)
                             };
                             //If single select 0
-                            if(single) selectIndex(0);
+                            if (single) selectIndex(0);
                             const fixSelection = () => {
-                                if(selectedIndex == null) return;
-                                if(items.length === 0){
+                                if (selectedIndex == null) return;
+                                if (items.length === 0) {
                                     selectIndex(null);
+                                    return
+                                }
+                                if(lastCreated.id != null && lastCreated.path === namespace.join('.')){
+                                    console.log(`Selecting ID lastCreated`, lastCreated);
+                                    selectId(lastCreated.id);
+                                    lastCreated = {id: null, path: null};
                                     return
                                 }
                                 const validIndex = Math.max(0, Math.min(selectedIndex, items.length - 1));
@@ -168,15 +191,15 @@ class Entity extends Component<EntityProps> {
                             };
                             fixSelection();
                             const setEditIndex = (newIndex) => {
-                                if(newIndex === undefined) newIndex = selectedIndex;
-                                if(newIndex != editingIndex){
+                                if (newIndex === undefined) newIndex = selectedIndex;
+                                if (newIndex != editingIndex) {
                                     onChange({...state, editingIndex: newIndex});
                                     this.forceUpdate()
                                 }
                             };
                             const cancelEdition = () => setEditIndex(null);
                             const openInOwnPage = (index: number, params?: Partial<NavigateParams>, id?: boolean) => {
-                                if(!id) index = _.clamp(index, 0, items.length -1);
+                                if (!id) index = _.clamp(index, 0, items.length - 1);
                                 const defaultParams: NavigateParams = {
                                     to: entityInfo.name,
                                     args: {entityId: id ? index : items[index].id},
@@ -189,43 +212,59 @@ class Entity extends Component<EntityProps> {
                                 console.log('Mutation error', e);
                                 onForeignKeyError(e)
                             };
-                            const handleRefetch = () => refetch;
-                            const refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}];
-
+                            const handleRefetch = () => refetch({variables: variables});
+                            let refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}];
+                            // if (parentRefetchQuery != null) refetchQueries.push({query: parentRefetchQuery, variables: {}});
+                            // if (this.props.additionalRefetchQueries != null) refetchQueries = refetchQueries.concat(this.props.additionalRefetchQueries);
+                            const handleCompleted = (type) => (data) => {
+                                if(type === 'create'){
+                                    const idKey = _.keysIn(data).filter(k => k.startsWith('create'))[0]
+                                    if (idKey == null) return;
+                                    const id = _.get(data, [idKey, 'id'])
+                                    console.log(`Created ID completed `, id);
+                                    lastCreated.id = id;
+                                    lastCreated.path = namespace.join('.');
+                                    // setTimeout(() => selectNextId(), 1000)
+                                }
+                            }
                             return <All
                                 props={{onError: handleError, refetchQueries}}
                                 of={[
-                                    [Mutation, {mutation: entityInfo.mutations.create.query}],
-                                    [Mutation, {mutation: entityInfo.mutations.update.query}],
-                                    [Mutation, {mutation: entityInfo.mutations.delete.query}],
+                                    [Mutation, {mutation: entityInfo.mutations.create.query, onCompleted: handleCompleted('create')}],
+                                    [Mutation, {mutation: entityInfo.mutations.update.query, onCompleted: handleCompleted('update')}],
+                                    [Mutation, {mutation: entityInfo.mutations.delete.query, onCompleted: handleCompleted('delete')}],
                                 ]}>
                                 {(createMutation, updateMutation, deleteMutation) => {
-                                    let handleCreate = (body) => {
+                                    let handleCreate = (body, onCompleted?) => {
                                         if (body == null || body == {}) return;
-                                        createMutation({variables: {input: body}});
+                                        const onCompleted1 = (p1) => {
+                                            console.log(`onCompleted1`, p1);
+                                        }
+                                        createMutation({variables: {input: body}, onCompleted: onCompleted1});
+                                        // this.forceUpdate()
                                     };
-                                    let handleUpdate = (index = selectedIndex, body) => {
+                                    let handleUpdate = (index = selectedIndex, body, onCompleted?) => {
                                         if (index == null || body == null || body == {}) return;
                                         let id = items[index].id;
                                         if (id == null) return;
                                         updateMutation({variables: {id, input: body}});
                                     };
-                                    let handleUpdateId = (id: number, body) => {
+                                    let handleUpdateId = (id: number, body, onCompleted?) => {
                                         if (id == null || body == null || body == {}) return;
                                         updateMutation({variables: {id, input: body}});
                                     };
-                                    let handleRemove = (index) => {
+                                    let handleRemove = (index, onCompleted?) => {
                                         if (index == null) return;
                                         let id = items[index].id;
                                         if (id == null) return;
                                         deleteMutation({variables: {id}});
-                                        this.forceUpdate()
+                                        // this.forceUpdate()
                                         // If unselect on delete
                                         // selectIndex(null)
                                     };
-                                    let handleRemoveSelected = () => handleRemove(selectedIndex);
+                                    let handleRemoveSelected = (onCompleted?: (data: any) => void) => handleRemove(selectedIndex, onCompleted);
                                     let handleEditSelected = () => setEditIndex(selectedIndex);
-                                    let handleUpdateEditing = (body: Object) => handleUpdate(editingIndex, body);
+                                    let handleUpdateEditing = (body: Object, onCompleted) => handleUpdate(editingIndex, body, onCompleted);
 
                                     return this.props.children({ // TODO Add mutations
                                         items,

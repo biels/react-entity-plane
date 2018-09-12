@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 import {EntityPlaneInfo} from "./types/EntityPlaneInfo";
-import {EntityInfoKey} from "./types/entities";
+import {EntityInfoKey, EntityQuery} from "./types/entities";
 import _ from 'lodash';
 import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from 'deep-object-diff';
 export interface EntityPlaneStateNode {
@@ -9,6 +9,7 @@ export interface EntityPlaneStateNode {
     selectedIndex: number | null,
     editingIndex: number | null,
     selectedId: number | string | null,
+    query?: EntityQuery
     state: any
     relations: {
         [relationName: string]: EntityPlaneStateNode

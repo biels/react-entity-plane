@@ -28,6 +28,7 @@ export interface EntityMutations {
 export interface RelationInfo {
     entityName: EntityInfoKey,
     type?: 'single' | 'multi'
+    refetchParent?: boolean
     queries: EntityQueries
 }
 export interface EntityField {
