@@ -13,6 +13,10 @@ export interface EntityPlaneProvidedObject {
     onForeignKeyError: (error) => any
 }
 const {Provider, Consumer: EntityPlaneConsumer} = React.createContext<EntityPlaneProvidedObject>(null);
+
+/**
+ * Provides application-level info for entities and error handlers
+ */
 class EntityPlaneProvider extends Component<EntityPlaneProviderProps> {
     render() {
         return <Provider value={{entities: this.props.entities, onForeignKeyError: this.props.onForeignKeyError}}>
