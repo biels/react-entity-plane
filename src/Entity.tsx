@@ -36,7 +36,7 @@ export interface EntityRenderProps {
     // handleCreate: () => any
     // handleUpdate: () => any
     // handleDelete: () => any
-    mutate: (mutationName, id, options: Partial<MutationOptions>) => any
+    mutate: (mutationName: string, id: number | string | null, options: Partial<MutationOptions>) => any
     remove: (index: number, onCompleted?: (data: any) => void) => any
     removeSelected: (onCompleted?: (data: any) => void) => any
     create: (body: Object, onCompleted?: (data: any) => void) => any
