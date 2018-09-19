@@ -159,7 +159,8 @@ class Entity extends Component<EntityProps> {
                             if (items == null) {
                                 if (this.props.fetchPolicy == "cache-only")
                                     return <div>Waiting...</div>;
-                                return <div>Bad selector {query.selector}, items: {items}</div>
+                                console.log(`Bad selector ${query.selector}, data:`, data);
+                                return <div>Bad selector {query.selector}, data: {JSON.stringify(data)}</div>
                             }
 
                             if (single) {
