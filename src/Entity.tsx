@@ -26,6 +26,8 @@ export interface EntityObject {
 export interface EntityRenderProps {
     items: EntityObject[]
     selectedIndex: number | null,
+    selectedIndexes: number[],
+    selectedIds: number[],
     editingIndex: number | null
     editingId: number | string | null
     editing: boolean
@@ -44,6 +46,7 @@ export interface EntityRenderProps {
     selectIndex: (index: number | null) => any,
     selectIndexes: (indexes: number[], update?: boolean) => any,
     selectId: (id: number | null) => any,
+    selectIds: (ids: number[], update: boolean) => any,
     startEditing: (index?: number | null) => any,
     cancelEdition: () => void
     refetch: () => void
@@ -76,9 +79,7 @@ class Entity extends Component<EntityProps> {
         return <Namespace name={this.props.relation || processedName}>
             <EntityContextSpy>
                 {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError}) => { //parentRelationInfo can be added
-                    const selectedIndex = state.selectedIndex;
-                    const selectedIndexes = state.selectedIndexes;
-                    const editingIndex = state.editingIndex;
+                    const {selectedIndex, selectedIndexes, selectedIds, editingIndex} = state
 
                     const setEntityState = (newEntityState: Partial<EntityPlaneStateNode>, update: boolean = true) => {
                         onChange({...state, state: {...state.state, ...newEntityState}}, update)
@@ -213,9 +214,18 @@ class Entity extends Component<EntityProps> {
                             const selectIndexes = (indexes: number[], update: boolean) => {
                                 if(indexes == null) indexes = [];
                                 if(state.selectedIndexes === indexes) update = false;
-                                setEntityState({selectedIndexes: indexes}, update)
+                                const ids = indexes.map(i => _.get(items[i], 'id'))
+                                onChange({...state, selectedIndexes: indexes, selectedIds: ids}, update)
                             }
-
+                            const selectIds = (ids: number[], update: boolean) => {
+                                if(ids == null) ids = [];
+                                if(state.selectedIds === ids) update = false;
+                                const indexes = _.filter(
+                                    ids.map(id => _.get(_.find(items, item => item.id === id), 'id')),
+                                    id => id != null
+                                )
+                                onChange({...state, selectedIds: ids, selectedIndexes: indexes}, update)
+                            }
                             //TODO Assisted addition / removal from selection
                             const addToSelection = (index) => {
 
@@ -317,6 +327,8 @@ class Entity extends Component<EntityProps> {
                                     return this.props.children({ // TODO Add mutations
                                         items,
                                         selectedIndex,
+                                        selectedIndexes,
+                                        selectedIds,
                                         selectedItem,
                                         editingIndex,
                                         editingId: editingItemId,
@@ -326,6 +338,7 @@ class Entity extends Component<EntityProps> {
                                         selectIndex,
                                         selectIndexes,
                                         selectId,
+                                        selectIds,
                                         create: handleCreate,
                                         update: handleUpdate,
                                         updateId: handleUpdateId,
