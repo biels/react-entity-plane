@@ -37,8 +37,8 @@ class LoadingQuery<TData = any, TVariables = OperationVariables> extends Compone
     render() {
         const {size, ...rest} = this.props
         return <Query {...rest}>
-            {({loading, error, ...otherProps}) => {
-                if (loading) {
+            {({loading, error, data, ...otherProps}) => {
+                if (data == null) {
                     return <SpinnerContainer>
                         <Spinner size={size}/>
                     </SpinnerContainer>;
@@ -59,7 +59,7 @@ class LoadingQuery<TData = any, TVariables = OperationVariables> extends Compone
                         }
                     </NonIdealState>
                 }
-                return this.props.children({loading, error, ...otherProps});
+                return this.props.children({loading, error, data, ...otherProps});
             }}
         </Query>
     }
