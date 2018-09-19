@@ -6,6 +6,7 @@ import {QueryProps} from "react-apollo/Query";
 import {Button, NonIdealState, Spinner} from "@blueprintjs/core";
 import {NetworkStatus} from "apollo-client";
 import _ from 'lodash';
+import formatTsDiagnostics from "ts-jest/dist/utils/format-diagnostics";
 
 const SpinnerContainer = styled.div`
     display: grid;
@@ -36,11 +37,23 @@ export interface LoadingQueryProps<TData = any, TVariables = OperationVariables>
 
 
 class LoadingQuery<TData = any, TVariables = OperationVariables> extends Component<LoadingQueryProps> {
+    state = {
+        loaded: false,
+        broken: false
+    }
+    componentDidMount(){
+          setTimeout(() => {
+              if(this.state.loaded) return;
+              console.log(`Broken!`);
+              this.setState({broken: true});
+          }, 1900)
+    }
     render() {
         const {size, ...rest} = this.props
         return <Query {...rest}>
             {({loading, error, data, ...otherProps}) => {
-                if ((data == null || (this.props.selector && _.get(data, this.props.selector) == null)) && error == null) {
+                let selectorInvalid = (this.props.selector && _.get(data, this.props.selector) == null);
+                if (!error && (data == null || selectorInvalid) && error == null && !this.state.broken) {
                     return <SpinnerContainer>
                         <Spinner size={size}/>
                     </SpinnerContainer>;
@@ -61,6 +74,7 @@ class LoadingQuery<TData = any, TVariables = OperationVariables> extends Compone
                         }
                     </NonIdealState>
                 }
+                this.state.loaded = true;
                 return this.props.children({loading, error, data, ...otherProps});
             }}
         </Query>
