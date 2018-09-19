@@ -141,6 +141,8 @@ class Entity extends Component<EntityProps> {
                     //Explicitly set query
                     if(this.props.query != null && !isRelation){
                         query = entityInfo.queries[this.props.query]
+                        variables: {}
+                        single = query.type === 'single'
                     }
 
                     if (query == null) {
