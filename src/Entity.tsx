@@ -55,6 +55,7 @@ export interface EntityRenderProps {
     entityState: any,
     setEntityState: (newEntityState: any, update?: boolean) => any
     getLocalState: () => object
+    clear: () => any
 }
 
 export interface EntityProps {
@@ -62,7 +63,7 @@ export interface EntityProps {
     relation?: string
     ids?: number | string
     fetchPolicy?: FetchPolicy
-    additionalRefetchQueries?: [{query, variables}]
+    additionalRefetchQueries?: [{ query, variables }]
     children: (props: EntityRenderProps) => any
     root?: boolean
     query?: string
@@ -70,6 +71,7 @@ export interface EntityProps {
 }
 
 let lastCreated = {id: null, path: null};
+
 class Entity extends Component<EntityProps> {
     // shouldComponentUpdate(){
     //     return false;
@@ -78,7 +80,7 @@ class Entity extends Component<EntityProps> {
         let processedName = (this.props.name != null ? `/${this.props.name}` : undefined);
         return <Namespace name={this.props.relation || processedName}>
             <EntityContextSpy>
-                {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError}) => { //parentRelationInfo can be added
+                {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError, clear}) => { //parentRelationInfo can be added
                     const {selectedIndex, selectedIndexes, selectedIds, editingIndex} = state
 
                     const setEntityState = (newEntityState: Partial<EntityPlaneStateNode>, update: boolean = true) => {
@@ -113,7 +115,7 @@ class Entity extends Component<EntityProps> {
                         if (relation.refetchParent) parentRefetchQuery = parentEntityInfo.type === 'single' ? parentEntityInfo.queries.one : parentEntityInfo.queries.all
 
                         //Explicitly set query
-                        if(this.props.query != null){
+                        if (this.props.query != null) {
                             query = relation.queries[this.props.query]
                         }
                     } else if (this.props.root && topLevel && rootEntityId != null) {
@@ -132,16 +134,16 @@ class Entity extends Component<EntityProps> {
                         variables = {id: this.props.ids};
                         single = true;
                         console.debug('Singlifying entity with id', this.props.ids);
-                    }
-                    else {
+                    } else {
                         query = entityInfo.queries.all;
                         if (query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
                     }
 
                     //Explicitly set query
-                    if(this.props.query != null && !isRelation){
+                    if (this.props.query != null && !isRelation) {
                         query = entityInfo.queries[this.props.query]
-                        variables: {}
+                        variables: {
+                        }
                         single = query.type === 'single'
                     }
 
@@ -151,8 +153,9 @@ class Entity extends Component<EntityProps> {
                     // setEntityState({...state, query}, false)
                     let avoidUnmounting = this.props.avoidUnmounting;
                     avoidUnmounting = avoidUnmounting || this.props.fetchPolicy !== 'cache-only'
-                    return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy} selector={avoidUnmounting ? query.selector : null}>
-                        {({data, refetch, client}: {data: any, refetch: Function, client: ApolloClient<any>}) => {
+                    return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}
+                                         selector={avoidUnmounting ? query.selector : null}>
+                        {({data, refetch, client}: { data: any, refetch: Function, client: ApolloClient<any> }) => {
                             let items = _.get(data, query.selector, null);
 
                             // let items = _.sortBy(unsortedItems, ['id']);
@@ -202,7 +205,7 @@ class Entity extends Component<EntityProps> {
                                     selectIndex(null);
                                     return
                                 }
-                                if(lastCreated.id != null && lastCreated.path === namespace.join('.')){
+                                if (lastCreated.id != null && lastCreated.path === namespace.join('.')) {
                                     console.log(`Selecting ID lastCreated`, lastCreated);
                                     selectId(lastCreated.id);
                                     lastCreated = {id: null, path: null};
@@ -215,14 +218,14 @@ class Entity extends Component<EntityProps> {
 
                             //Multi selection
                             const selectIndexes = (indexes: number[], update: boolean) => {
-                                if(indexes == null) indexes = [];
-                                if(state.selectedIndexes === indexes) update = false;
+                                if (indexes == null) indexes = [];
+                                if (state.selectedIndexes === indexes) update = false;
                                 const ids = indexes.map(i => _.get(items[i], 'id'))
                                 onChange({...state, selectedIndexes: indexes, selectedIds: ids}, update)
                             }
                             const selectIds = (ids: number[], update: boolean) => {
-                                if(ids == null) ids = [];
-                                if(state.selectedIds === ids) update = false;
+                                if (ids == null) ids = [];
+                                if (state.selectedIds === ids) update = false;
                                 const indexes = _.filter(
                                     ids.map(id => _.get(_.find(items, item => item.id === id), 'id')),
                                     id => id != null
@@ -262,7 +265,7 @@ class Entity extends Component<EntityProps> {
                             // if (parentRefetchQuery != null) refetchQueries.push({query: parentRefetchQuery, variables: {}});
                             // if (this.props.additionalRefetchQueries != null) refetchQueries = refetchQueries.concat(this.props.additionalRefetchQueries);
                             const handleCompleted = (type) => (data) => {
-                                if(type === 'create'){
+                                if (type === 'create') {
                                     const idKey = _.keysIn(data).filter(k => k.startsWith('create'))[0]
                                     if (idKey == null) return;
                                     const id = _.get(data, [idKey, 'id'])
@@ -275,9 +278,18 @@ class Entity extends Component<EntityProps> {
                             return <All
                                 props={{onError: handleError, refetchQueries}}
                                 of={[
-                                    [Mutation, {mutation: entityInfo.mutations.create.query, onCompleted: handleCompleted('create')}],
-                                    [Mutation, {mutation: entityInfo.mutations.update.query, onCompleted: handleCompleted('update')}],
-                                    [Mutation, {mutation: entityInfo.mutations.delete.query, onCompleted: handleCompleted('delete')}],
+                                    [Mutation, {
+                                        mutation: entityInfo.mutations.create.query,
+                                        onCompleted: handleCompleted('create')
+                                    }],
+                                    [Mutation, {
+                                        mutation: entityInfo.mutations.update.query,
+                                        onCompleted: handleCompleted('update')
+                                    }],
+                                    [Mutation, {
+                                        mutation: entityInfo.mutations.delete.query,
+                                        onCompleted: handleCompleted('delete')
+                                    }],
                                 ]}>
                                 {(createMutation, updateMutation, deleteMutation) => {
                                     let handleCreate = (body, onCompleted?) => {
@@ -309,7 +321,7 @@ class Entity extends Component<EntityProps> {
                                     };
                                     let handleMutate = async (mutationName, id, options: Partial<MutationOptions>) => {
                                         let mutation = entityInfo.mutations[mutationName];
-                                        if(mutation == null) {
+                                        if (mutation == null) {
                                             console.log(`${mutationName} is not a mutation on ${entityInfo.name}`);
                                             return;
                                         }
@@ -355,7 +367,8 @@ class Entity extends Component<EntityProps> {
                                         openInOwnPage,
                                         setEntityState,
                                         entityState,
-                                        getLocalState
+                                        getLocalState,
+                                        clear
                                     })
                                 }}
                             </All>

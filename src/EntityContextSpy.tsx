@@ -29,6 +29,7 @@ export interface EntityContextSpyRenderProps {
     entities: EntitiesObject
     onForeignKeyError: (error) => any
     getLocalState: () => object
+    clear: () => any
 }
 
 export interface EntityContextSpyProps {
@@ -82,7 +83,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         // console.log('>>>> onStateChange', stateTemplate);
                     }
                     // const final = _.get(getLocalState(), 'state.pickerOpen')
-                     // console.log('State diff', initial, final);
+                    // console.log('State diff', initial, final);
                     // if(!_.isEqual(newLocalState, getLocalState())){
                     //     console.error('Error updating states expected / actual:', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
                     // }else {
@@ -129,14 +130,9 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const isValidEntityName = (entityName) => {
                     return _.get(entities, entityName) != null
                 }
-                if (getLocalState() == null) {
-                    //Initialize local value
 
-                    const entityName = isRelation ? getRelationInfo().entityName : nsFrame;
-                    if(!isValidEntityName(entityName)){
-                        return err(`${entityName} is not a valid entity name. Valid names are: ${_.keysIn(entities).toString()}`)
-                    }
-                    // console.log({entityName, topLevel});
+                const entityName = isRelation ? getRelationInfo().entityName : nsFrame;
+                const clear = (update) => {
                     onStateChange({
                         entityName,
                         selectedIndex: null,
@@ -145,7 +141,17 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         editingIndex: null,
                         relations: {},
                         state: {}
-                    }, false)
+                    }, update)
+                }
+
+                if (getLocalState() == null) {
+                    //Initialize local value
+
+                    if (!isValidEntityName(entityName)) {
+                        return err(`${entityName} is not a valid entity name. Valid names are: ${_.keysIn(entities).toString()}`)
+                    }
+                    // console.log({entityName, topLevel});
+                    clear(false);
                     return null;
                 }
                 const entityInfo = getEntityInfo(getEntityName())
@@ -178,7 +184,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     isRelation,
                     navigate,
                     entities,
-                    onForeignKeyError: entityPlane.onForeignKeyError
+                    onForeignKeyError: entityPlane.onForeignKeyError,
+                    clear
                 } as EntityContextSpyRenderProps)
             }}
         </All>
