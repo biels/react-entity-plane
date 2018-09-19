@@ -104,6 +104,11 @@ class Entity extends Component<EntityProps> {
                         }
                         variables = {id: parentState.selectedId}
                         if (relation.refetchParent) parentRefetchQuery = parentEntityInfo.type === 'single' ? parentEntityInfo.queries.one : parentEntityInfo.queries.all
+
+                        //Explicitly set query
+                        if(this.props.query != null){
+                            query = relation.queries[this.props.query]
+                        }
                     } else if (this.props.root && topLevel && rootEntityId != null) {
                         //Use Single entity (one) query
                         if (entityInfo.queries.one == null) {
@@ -124,6 +129,11 @@ class Entity extends Component<EntityProps> {
                     else {
                         query = entityInfo.queries.all;
                         if (query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
+                    }
+
+                    //Explicitly set query
+                    if(this.props.query != null && !isRelation){
+                        query = entityInfo.queries[this.props.query]
                     }
 
                     if (query == null) {

@@ -9,7 +9,8 @@ export interface Entity {
 }
 export interface EntityQuery {
     query: DocumentNode,
-    selector: string
+    selector: string,
+    type?: 'single' | 'multi'
 }
 export interface EntityQueries {
     one?: EntityQuery
