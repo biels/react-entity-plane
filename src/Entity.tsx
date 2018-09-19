@@ -14,6 +14,7 @@ import {err} from "./errorMessage";
 import {on} from "cluster";
 import {selectLimit} from "async";
 import ApolloClient from "apollo-client/ApolloClient";
+import {EntityPlaneStateNode} from "./EntityContext";
 
 
 export interface EntityObject {
@@ -41,6 +42,7 @@ export interface EntityRenderProps {
     updateId: (id: number | string | null, body: Object, onCompleted?: (data: any) => void) => any
     updateEditing: (body: Object, onCompleted?: (data: any) => void) => any
     selectIndex: (index: number | null) => any,
+    selectIndexes: (indexes: number[], update?: boolean) => any,
     selectId: (id: number | null) => any,
     startEditing: (index?: number | null) => any,
     cancelEdition: () => void
@@ -61,6 +63,7 @@ export interface EntityProps {
     children: (props: EntityRenderProps) => any
     root?: boolean
     query?: string
+    avoidUnmounting?: boolean
 }
 
 let lastCreated = {id: null, path: null};
@@ -74,9 +77,10 @@ class Entity extends Component<EntityProps> {
             <EntityContextSpy>
                 {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError}) => { //parentRelationInfo can be added
                     const selectedIndex = state.selectedIndex;
+                    const selectedIndexes = state.selectedIndexes;
                     const editingIndex = state.editingIndex;
 
-                    const setEntityState = (newEntityState, update: boolean = true) => {
+                    const setEntityState = (newEntityState: Partial<EntityPlaneStateNode>, update: boolean = true) => {
                         onChange({...state, state: {...state.state, ...newEntityState}}, update)
                     }
                     const entityState = state.state;
@@ -142,7 +146,9 @@ class Entity extends Component<EntityProps> {
                         return err(`Could not find a query for ${namespace.join('.')}`)
                     }
                     // setEntityState({...state, query}, false)
-                    return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}>
+                    let avoidUnmounting = this.props.avoidUnmounting;
+                    avoidUnmounting = avoidUnmounting || this.props.fetchPolicy !== 'cache-only'
+                    return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy} selector={avoidUnmounting ? query.selector : null}>
                         {({data, refetch, client}: {data: any, refetch: Function, client: ApolloClient<any>}) => {
                             let items = _.get(data, query.selector, null);
 
@@ -202,6 +208,20 @@ class Entity extends Component<EntityProps> {
                                 selectIndex(validIndex)
                             };
                             fixSelection();
+
+                            //Multi selection
+                            const selectIndexes = (indexes: number[], update: boolean) => {
+                                if(indexes == null) indexes = [];
+                                if(state.selectedIndexes === indexes) update = false;
+                                setEntityState({selectedIndexes: indexes}, update)
+                            }
+
+                            //TODO Assisted addition / removal from selection
+                            const addToSelection = (index) => {
+
+                            }
+
+
                             const setEditIndex = (newIndex) => {
                                 if (newIndex === undefined) newIndex = selectedIndex;
                                 if (newIndex != editingIndex) {
@@ -304,6 +324,7 @@ class Entity extends Component<EntityProps> {
                                         editSelected: handleEditSelected,
                                         mutate: handleMutate,
                                         selectIndex,
+                                        selectIndexes,
                                         selectId,
                                         create: handleCreate,
                                         update: handleUpdate,

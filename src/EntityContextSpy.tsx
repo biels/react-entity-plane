@@ -140,6 +140,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     onStateChange({
                         entityName,
                         selectedIndex: null,
+                        selectedIndexes: [],
                         editingIndex: null,
                         relations: {},
                         state: {}

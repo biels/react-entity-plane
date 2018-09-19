@@ -5,6 +5,7 @@ import {OperationVariables} from "react-apollo/types";
 import {QueryProps} from "react-apollo/Query";
 import {Button, NonIdealState, Spinner} from "@blueprintjs/core";
 import {NetworkStatus} from "apollo-client";
+import _ from 'lodash';
 
 const SpinnerContainer = styled.div`
     display: grid;
@@ -30,6 +31,7 @@ const ErrorObjectContainer = styled.pre`
 
 export interface LoadingQueryProps<TData = any, TVariables = OperationVariables> extends QueryProps<TData, TVariables> {
     size?: number
+    selector?: string
 }
 
 
@@ -38,7 +40,7 @@ class LoadingQuery<TData = any, TVariables = OperationVariables> extends Compone
         const {size, ...rest} = this.props
         return <Query {...rest}>
             {({loading, error, data, ...otherProps}) => {
-                if (data == null) {
+                if ((data == null || (this.props.selector && _.get(data, this.props.selector) == null)) && error == null) {
                     return <SpinnerContainer>
                         <Spinner size={size}/>
                     </SpinnerContainer>;

@@ -7,6 +7,7 @@ import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from 'deep-ob
 export interface EntityPlaneStateNode {
     entityName: EntityInfoKey,
     selectedIndex: number | null,
+    selectedIndexes: number[],
     editingIndex: number | null,
     selectedId: number | string | null,
     query?: EntityQuery
