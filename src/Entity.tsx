@@ -4,7 +4,7 @@ import EntityContextSpy from "./EntityContextSpy";
 import LoadingQuery from "./LoadingQuery";
 import {EntityInfo, EntityInfoKey, EntityQuery, RelationInfo} from "./types/entities";
 import {Mutation} from "react-apollo";
-import {FetchPolicy, PureQueryOptions} from "apollo-client";
+import {FetchPolicy, MutationOptions, PureQueryOptions} from "apollo-client";
 import {DocumentNode} from "graphql";
 import {NonIdealState} from "@blueprintjs/core";
 import {NavigateParams} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
@@ -13,6 +13,7 @@ import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
 import {on} from "cluster";
 import {selectLimit} from "async";
+import ApolloClient from "apollo-client/ApolloClient";
 
 
 export interface EntityObject {
@@ -32,6 +33,7 @@ export interface EntityRenderProps {
     // handleCreate: () => any
     // handleUpdate: () => any
     // handleDelete: () => any
+    mutate: (mutationName, id, options: Partial<MutationOptions>) => any
     remove: (index: number, onCompleted?: (data: any) => void) => any
     removeSelected: (onCompleted?: (data: any) => void) => any
     create: (body: Object, onCompleted?: (data: any) => void) => any
@@ -141,7 +143,7 @@ class Entity extends Component<EntityProps> {
                     }
                     // setEntityState({...state, query}, false)
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}>
-                        {({data, refetch}) => {
+                        {({data, refetch, client}: {data: any, refetch: Function, client: ApolloClient<any>}) => {
                             let items = _.get(data, query.selector, null);
 
                             // let items = _.sortBy(unsortedItems, ['id']);
@@ -272,6 +274,22 @@ class Entity extends Component<EntityProps> {
                                         // If unselect on delete
                                         // selectIndex(null)
                                     };
+                                    let handleMutate = async (mutationName, id, options: Partial<MutationOptions>) => {
+                                        let mutation = entityInfo.mutations[mutationName];
+                                        if(mutation == null) {
+                                            console.log(`${mutationName} is not a mutation on ${entityInfo.name}`);
+                                            return;
+                                        }
+                                        const getDefaultVariables = () => {
+                                            if (id == null) return {};
+                                            return {id};
+                                        }
+                                        let baseOptions: MutationOptions = {
+                                            mutation: mutation.query,
+                                            variables: {...getDefaultVariables(), ...variables}
+                                        }
+                                        await client.mutate(Object.assign(baseOptions, options))
+                                    }
                                     let handleRemoveSelected = (onCompleted?: (data: any) => void) => handleRemove(selectedIndex, onCompleted);
                                     let handleEditSelected = () => setEditIndex(selectedIndex);
                                     let handleUpdateEditing = (body: Object, onCompleted) => handleUpdate(editingIndex, body, onCompleted);
@@ -284,6 +302,7 @@ class Entity extends Component<EntityProps> {
                                         editingId: editingItemId,
                                         editing: editingIndex === selectedIndex,
                                         editSelected: handleEditSelected,
+                                        mutate: handleMutate,
                                         selectIndex,
                                         selectId,
                                         create: handleCreate,
