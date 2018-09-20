@@ -263,7 +263,9 @@ class Entity extends Component<EntityProps> {
                             const handleRefetch = () => refetch({variables: variables});
                             let refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}];
                             // if (parentRefetchQuery != null) refetchQueries.push({query: parentRefetchQuery, variables: {}});
-                            // if (this.props.additionalRefetchQueries != null) refetchQueries = refetchQueries.concat(this.props.additionalRefetchQueries);
+                            if (this.props.additionalRefetchQueries != null) {
+                                refetchQueries = refetchQueries.concat(this.props.additionalRefetchQueries);
+                            }
                             const handleCompleted = (type) => (data) => {
                                 if (type === 'create') {
                                     const idKey = _.keysIn(data).filter(k => k.startsWith('create'))[0]
