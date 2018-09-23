@@ -68,11 +68,15 @@ export interface EntityProps {
     root?: boolean
     query?: string
     avoidUnmounting?: boolean
+    poll?: boolean
 }
 
 let lastCreated = {id: null, path: null};
 
 class Entity extends Component<EntityProps> {
+    state = {
+        randomPollingOffset: _.random(0, 12000)
+    }
     // shouldComponentUpdate(){
     //     return false;
     // }
@@ -81,7 +85,7 @@ class Entity extends Component<EntityProps> {
         return <Namespace name={this.props.relation || processedName}>
             <EntityContextSpy>
                 {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError, clear}) => { //parentRelationInfo can be added
-                    const {selectedIndex, selectedIndexes, selectedIds, editingIndex} = state
+                    let {selectedIndex, selectedIndexes, selectedIds, editingIndex} = state
 
                     const setEntityState = (newEntityState: Partial<EntityPlaneStateNode>, update: boolean = true) => {
                         onChange({...state, state: {...state.state, ...newEntityState}}, update)
@@ -153,8 +157,10 @@ class Entity extends Component<EntityProps> {
                     // setEntityState({...state, query}, false)
                     let avoidUnmounting = this.props.avoidUnmounting;
                     avoidUnmounting = avoidUnmounting || this.props.fetchPolicy !== 'cache-only'
+                    let pollInterval = (!this.props.poll ||this.props.fetchPolicy == 'cache-first' || this.props.fetchPolicy == 'cache-only') ? undefined
+                        : 11000 + (!single ? 32000 : 0) + this.state.randomPollingOffset;
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}
-                                         selector={avoidUnmounting ? query.selector : null}>
+                                                                  selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}>
                         {({data, refetch, client}: { data: any, refetch: Function, client: ApolloClient<any> }) => {
                             let items = _.get(data, query.selector, null);
 
@@ -168,6 +174,7 @@ class Entity extends Component<EntityProps> {
 
                             if (single) {
                                 items = [items];
+                                // selectedIndex = 0;
                             }
 
                             items = _.sortBy(items, ['id'])
@@ -260,11 +267,20 @@ class Entity extends Component<EntityProps> {
                                 console.log('Mutation error', e);
                                 onForeignKeyError(e)
                             };
-                            const handleRefetch = () => refetch({variables: variables});
+                            const handleRefetch = () => refetch(variables);
                             let refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}];
                             // if (parentRefetchQuery != null) refetchQueries.push({query: parentRefetchQuery, variables: {}});
                             if (this.props.additionalRefetchQueries != null) {
-                                refetchQueries = refetchQueries.concat(this.props.additionalRefetchQueries);
+                                const additionalRefetchQueriesWithId = this.props.additionalRefetchQueries
+                                    .map(arq => {
+                                        if(_.get(arq, 'variables.id') == 'id') {
+                                            if(selectedItem == null) return null;
+                                            return {query: arq.query, variables: {...arq.variables, id: selectedItem.id}};
+                                        }
+                                        return arq;
+                                    })
+                                    .filter(arq => arq != null)
+                                refetchQueries = refetchQueries.concat(additionalRefetchQueriesWithId);
                             }
                             const handleCompleted = (type) => (data) => {
                                 if (type === 'create') {

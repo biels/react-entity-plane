@@ -3,7 +3,7 @@ import styled from "styled-components";
 import {Query} from "react-apollo";
 import {OperationVariables} from "react-apollo/types";
 import {QueryProps} from "react-apollo/Query";
-import {Button, NonIdealState, Spinner} from "@blueprintjs/core";
+import {Button, Intent, NonIdealState, Spinner} from "@blueprintjs/core";
 import {NetworkStatus} from "apollo-client";
 import _ from 'lodash';
 import formatTsDiagnostics from "ts-jest/dist/utils/format-diagnostics";
@@ -54,8 +54,9 @@ class LoadingQuery<TData = any, TVariables = OperationVariables> extends Compone
             {({loading, error, data, ...otherProps}) => {
                 let selectorInvalid = (this.props.selector && _.get(data, this.props.selector) == null);
                 if (!error && (data == null || selectorInvalid) && error == null && !this.state.broken) {
+                    let intent = loading ? Intent.NONE : Intent.WARNING;
                     return <SpinnerContainer>
-                        <Spinner size={size}/>
+                        <Spinner size={size} intent={intent}/>
                     </SpinnerContainer>;
                 }
                 if (error) {
