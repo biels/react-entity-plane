@@ -151,7 +151,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         return err(`${entityName} is not a valid entity name. Valid names are: ${_.keysIn(entities).toString()}`)
                     }
                     // console.log({entityName, topLevel});
-                    clear(false);
+                    clear(true);
                     return null;
                 }
                 const entityInfo = getEntityInfo(getEntityName())
