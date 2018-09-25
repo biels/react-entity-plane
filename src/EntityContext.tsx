@@ -49,7 +49,7 @@ class EntityContextProvider extends Component<EntityContextProviderProps> {
     }
     handleStateChange = (newValue, force: boolean = false) => {
         if(!force && _.isEqual(this.state.stateNodes, newValue)) return;
-        console.log(`Updating ${count} times`,  detailedDiff(this.state.stateNodes, newValue));
+        // console.log(`Updating ${count} times`,  detailedDiff(this.state.stateNodes, newValue));
         this.setState({infoNodes: this.state.infoNodes, stateNodes: newValue}) // Merge?
         count++;
         //if(force) this.forceUpdate(() => console.log('Forced update'));

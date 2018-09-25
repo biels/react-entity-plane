@@ -44,7 +44,7 @@ class LoadingQuery<TData = any, TVariables = OperationVariables> extends Compone
     componentDidMount(){
           setTimeout(() => {
               if(this.state.loaded) return;
-              console.log(`Broken!`);
+              // console.log(`Broken!`);
               this.setState({broken: true});
           }, 1900)
     }

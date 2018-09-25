@@ -137,7 +137,7 @@ class Entity extends Component<EntityProps> {
                         query = entityInfo.queries.one;
                         variables = {id: this.props.ids};
                         single = true;
-                        console.debug('Singlifying entity with id', this.props.ids);
+                        // console.debug('Singlifying entity with id', this.props.ids);
                     } else {
                         query = entityInfo.queries.all;
                         if (query == null) return err(`Entity ${entityInfo.name} does not have an 'all' query`)
