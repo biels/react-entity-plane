@@ -182,27 +182,27 @@ class Entity extends Component<EntityProps> {
                             const selectedItem = items[selectedIndex];
                             const editingItem = _.get(items, editingIndex, null);
                             const editingItemId = _.get(editingItem, 'id', null);
-                            const selectIndex = (newIndex) => {
+                            const selectIndex = (newIndex: number, update: boolean = true) => {
                                 if (newIndex != selectedIndex) {
                                     onChange({
                                         ...state,
                                         selectedIndex: newIndex,
                                         selectedId: _.get(items[newIndex], 'id', null)
                                     });
-                                    this.forceUpdate()
+                                    if(update)this.forceUpdate()
                                 }
                             };
                             const selectNextId = () => {
                                 const nextId = _.max(_.map(items, i => items.id)) + 1
                                 selectIndex(nextId)
                             }
-                            const selectId = (id: number | null) => {
+                            const selectId = (id: number | null, update: boolean = true) => {
                                 if (id == null) {
                                     selectIndex(null);
                                     return
                                 }
                                 const index = _.findIndex(items, (it: any) => it.id === id);
-                                selectIndex(index)
+                                selectIndex(index, update)
                             };
                             //If single select 0
                             if (single) selectIndex(0);
@@ -228,6 +228,7 @@ class Entity extends Component<EntityProps> {
                                 if (indexes == null) indexes = [];
                                 if (state.selectedIndexes === indexes) update = false;
                                 const ids = indexes.map(i => _.get(items[i], 'id'))
+                                selectIndex(_.last(indexes), false)
                                 onChange({...state, selectedIndexes: indexes, selectedIds: ids}, update)
                             }
                             const selectIds = (ids: number[], update: boolean) => {
@@ -237,6 +238,7 @@ class Entity extends Component<EntityProps> {
                                     ids.map(id => _.get(_.find(items, item => item.id === id), 'id')),
                                     id => id != null
                                 )
+                                selectId(_.last(ids), false)
                                 onChange({...state, selectedIds: ids, selectedIndexes: indexes}, update)
                             }
                             //TODO Assisted addition / removal from selection
@@ -315,7 +317,7 @@ class Entity extends Component<EntityProps> {
                                         const onCompleted1 = (p1) => {
                                             console.log(`onCompleted1`, p1);
                                         }
-                                        createMutation({variables: {input: body}, onCompleted: onCompleted1});
+                                        createMutation({variables: {input: body}});
                                         // this.forceUpdate()
                                     };
                                     let handleUpdate = (index = selectedIndex, body, onCompleted?) => {
