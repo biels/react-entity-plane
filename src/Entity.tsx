@@ -46,7 +46,7 @@ export interface EntityRenderProps {
     selectIndex: (index: number | null) => any,
     selectIndexes: (indexes: number[], update?: boolean) => any,
     selectId: (id: number | null) => any,
-    selectIds: (ids: number[], update: boolean) => any,
+    selectIds: (ids: number[], emphasisId: number, update: boolean) => any,
     startEditing: (index?: number | null) => any,
     cancelEdition: () => void
     refetch: () => void
@@ -188,7 +188,7 @@ class Entity extends Component<EntityProps> {
                                         ...state,
                                         selectedIndex: newIndex,
                                         selectedId: _.get(items[newIndex], 'id', null)
-                                    });
+                                    }, update);
                                     if(update)this.forceUpdate()
                                 }
                             };
@@ -231,15 +231,21 @@ class Entity extends Component<EntityProps> {
                                 selectIndex(_.last(indexes), false)
                                 onChange({...state, selectedIndexes: indexes, selectedIds: ids}, update)
                             }
-                            const selectIds = (ids: number[], update: boolean) => {
+                            const selectIds = (ids: number[], emphasisId: number, update: boolean) => {
                                 if (ids == null) ids = [];
                                 if (state.selectedIds === ids) update = false;
                                 const indexes = _.filter(
                                     ids.map(id => _.get(_.find(items, item => item.id === id), 'id')),
                                     id => id != null
                                 )
-                                selectId(_.last(ids), false)
-                                onChange({...state, selectedIds: ids, selectedIndexes: indexes}, update)
+                                onChange({...state,
+                                    selectedIds: ids,
+                                    selectedIndexes: indexes,
+                                    selectedId: emphasisId,
+                                    selectedIndex: _.findIndex(items, (it: any) => it.id === emphasisId)
+                                }, update)
+                                // selectId(_.last(emphasisId), true)
+                                //if(update) this.forceUpdate();
                             }
                             //TODO Assisted addition / removal from selection
                             const addToSelection = (index) => {
