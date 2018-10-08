@@ -130,8 +130,11 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const isValidEntityName = (entityName) => {
                     return _.get(entities, entityName) != null
                 }
-
-                const entityName = isRelation ? getRelationInfo().entityName : nsFrame;
+                let preRelation = getRelationInfo();
+                if(isRelation && preRelation == null){
+                    return err(`Could not find relationInfo for ${namespace.join('.')}`)
+                }
+                const entityName = isRelation ? preRelation.entityName : nsFrame;
                 const clear = (update) => {
                     onStateChange({
                         entityName,

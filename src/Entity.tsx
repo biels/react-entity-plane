@@ -56,6 +56,9 @@ export interface EntityRenderProps {
     setEntityState: (newEntityState: any, update?: boolean) => any
     getLocalState: () => object
     clear: () => any
+    entityInfo: EntityInfo
+    parentEntityInfo: EntityInfo
+    relationInfo: RelationInfo
 }
 
 export interface EntityProps {
@@ -69,6 +72,7 @@ export interface EntityProps {
     query?: string
     avoidUnmounting?: boolean
     poll?: boolean
+
 }
 
 let lastCreated = {id: null, path: null};
@@ -298,7 +302,7 @@ class Entity extends Component<EntityProps> {
                                     console.log(`Created ID completed `, id);
                                     lastCreated.id = id;
                                     lastCreated.path = namespace.join('.');
-                                    // setTimeout(() => selectNextId(), 1000)
+                                     //setTimeout(() => selectNextId(), 1000)
                                 }
                             }
                             return <All
@@ -394,7 +398,10 @@ class Entity extends Component<EntityProps> {
                                         setEntityState,
                                         entityState,
                                         getLocalState,
-                                        clear
+                                        clear,
+                                        entityInfo,
+                                        parentEntityInfo,
+                                        relationInfo
                                     })
                                 }}
                             </All>
