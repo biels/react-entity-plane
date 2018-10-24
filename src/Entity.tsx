@@ -15,6 +15,8 @@ import {on} from "cluster";
 import {selectLimit} from "async";
 import ApolloClient from "apollo-client/ApolloClient";
 import {EntityPlaneStateNode} from "./EntityContext";
+import {Simulate} from "react-dom/test-utils";
+import invalid = Simulate.invalid;
 
 
 export interface EntityObject {
@@ -28,6 +30,7 @@ export interface EntityRenderProps {
     selectedIndex: number | null,
     selectedIndexes: number[],
     selectedIds: number[],
+    selectedId: number | string | null,
     editingIndex: number | null
     editingId: number | string | null
     editing: boolean
@@ -44,7 +47,7 @@ export interface EntityRenderProps {
     updateId: (id: number | string | null, body: Object, onCompleted?: (data: any) => void) => any
     updateEditing: (body: Object, onCompleted?: (data: any) => void) => any
     selectIndex: (index: number | null) => any,
-    selectIndexes: (indexes: number[], update?: boolean) => any,
+    selectIndexes: (indexes: number[], emphasisIndex: number, update: boolean) => any,
     selectId: (id: number | null) => any,
     selectIds: (ids: number[], emphasisId: number, update: boolean) => any,
     startEditing: (index?: number | null) => any,
@@ -79,17 +82,21 @@ let lastCreated = {id: null, path: null};
 
 class Entity extends Component<EntityProps> {
     state = {
-        randomPollingOffset: _.random(0, 12000)
+        randomPollingOffset: _.random(0, 12000),
+        invalid: false
     }
-    // shouldComponentUpdate(){
-    //     return false;
-    // }
+
+    shouldComponentUpdate() {
+        //if(this.state.invalid) return false;
+        return true;
+    }
+
     render() {
         let processedName = (this.props.name != null ? `/${this.props.name}` : undefined);
         return <Namespace name={this.props.relation || processedName}>
             <EntityContextSpy>
                 {({entityInfo, parentEntityInfo, relationInfo, state, getLocalState, parentState, onChange, namespace, rootEntityId, navigate, topLevel, isRelation, entities, getEntityInfo, onForeignKeyError, clear}) => { //parentRelationInfo can be added
-                    let {selectedIndex, selectedIndexes, selectedIds, editingIndex} = state
+                    let {selectedIndex, selectedIndexes, selectedIds, selectedId, editingIndex} = state
 
                     const setEntityState = (newEntityState: Partial<EntityPlaneStateNode>, update: boolean = true) => {
                         onChange({...state, state: {...state.state, ...newEntityState}}, update)
@@ -138,6 +145,7 @@ class Entity extends Component<EntityProps> {
                         single = true
                     } else if (this.props.ids != null || entityInfo.type === "single") {
                         if (entityInfo.queries.one == null) return err(`Entity ${entityInfo.name} does not have a 'one' query`);
+                        console.log(`Using Ids`);
                         query = entityInfo.queries.one;
                         variables = {id: this.props.ids};
                         single = true;
@@ -150,8 +158,7 @@ class Entity extends Component<EntityProps> {
                     //Explicitly set query
                     if (this.props.query != null && !isRelation) {
                         query = entityInfo.queries[this.props.query]
-                        variables: {
-                        }
+                        variables = {}
                         single = query.type === 'single'
                     }
 
@@ -161,10 +168,14 @@ class Entity extends Component<EntityProps> {
                     // setEntityState({...state, query}, false)
                     let avoidUnmounting = this.props.avoidUnmounting;
                     avoidUnmounting = avoidUnmounting || this.props.fetchPolicy !== 'cache-only'
-                    let pollInterval = (!this.props.poll ||this.props.fetchPolicy == 'cache-first' || this.props.fetchPolicy == 'cache-only') ? undefined
+                    let pollInterval = (!this.props.poll || this.props.fetchPolicy == 'cache-first' || this.props.fetchPolicy == 'cache-only') ? undefined
                         : 11000 + (!single ? 32000 : 0) + this.state.randomPollingOffset;
+                    const handleQueryCompleted = () => {
+
+                    }
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}
-                                                                  selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}>
+                                         selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
+                                         onCompleted={handleQueryCompleted}>
                         {({data, refetch, client}: { data: any, refetch: Function, client: ApolloClient<any> }) => {
                             let items = _.get(data, query.selector, null);
 
@@ -186,75 +197,125 @@ class Entity extends Component<EntityProps> {
                             const selectedItem = items[selectedIndex];
                             const editingItem = _.get(items, editingIndex, null);
                             const editingItemId = _.get(editingItem, 'id', null);
-                            const selectIndex = (newIndex: number, update: boolean = true) => {
-                                if (newIndex != selectedIndex) {
-                                    onChange({
-                                        ...state,
-                                        selectedIndex: newIndex,
-                                        selectedId: _.get(items[newIndex], 'id', null)
-                                    }, update);
-                                    if(update)this.forceUpdate()
-                                }
-                            };
-                            const selectNextId = () => {
-                                const nextId = _.max(_.map(items, i => items.id)) + 1
-                                selectIndex(nextId)
-                            }
-                            const selectId = (id: number | null, update: boolean = true) => {
-                                if (id == null) {
-                                    selectIndex(null);
-                                    return
-                                }
-                                const index = _.findIndex(items, (it: any) => it.id === id);
-                                selectIndex(index, update)
-                            };
-                            //If single select 0
-                            if (single) selectIndex(0);
-                            const fixSelection = () => {
-                                if (selectedIndex == null) return;
-                                if (items.length === 0) {
-                                    selectIndex(null);
-                                    return
-                                }
-                                if (lastCreated.id != null && lastCreated.path === namespace.join('.')) {
-                                    console.log(`Selecting ID lastCreated`, lastCreated);
-                                    selectId(lastCreated.id);
-                                    lastCreated = {id: null, path: null};
-                                    return
-                                }
-                                const validIndex = Math.max(0, Math.min(selectedIndex, items.length - 1));
-                                selectIndex(validIndex)
-                            };
-                            fixSelection();
+
 
                             //Multi selection
-                            const selectIndexes = (indexes: number[], update: boolean) => {
+                            const selectIndexes = (indexes: number[], emphasisIndex: number, update: boolean) => {
+                                if (this.state.invalid) return;
                                 if (indexes == null) indexes = [];
-                                if (state.selectedIndexes === indexes) update = false;
+                                if (_.isEqual(selectedIndexes, indexes)) return;
+                                if (state.selectedIndexes === indexes) update = false; //Remove?
                                 const ids = indexes.map(i => _.get(items[i], 'id'))
-                                selectIndex(_.last(indexes), false)
-                                onChange({...state, selectedIndexes: indexes, selectedIds: ids}, update)
+                                if (emphasisIndex == null) emphasisIndex = _.last(indexes);
+                                let emphasisId = _.get(items[emphasisIndex], 'id')
+                                //console.log(`Selecting using indexes`, indexes, ids, emphasisId);
+                                onChange({
+                                    ...state,
+                                    selectedIndexes: indexes,
+                                    selectedIds: ids,
+                                    selectedIndex: emphasisIndex,
+                                    selectedId: emphasisId
+                                }, update)
+                                //FIXME We may need an extra update here
+                                if (update) this.forceUpdate();
                             }
                             const selectIds = (ids: number[], emphasisId: number, update: boolean) => {
+                                if (this.state.invalid) return;
                                 if (ids == null) ids = [];
                                 if (state.selectedIds === ids) update = false;
                                 const indexes = _.filter(
-                                    ids.map(id => _.get(_.find(items, item => item.id === id), 'id')),
-                                    id => id != null
+                                    ids.map(id => _.findIndex(items, (item: any) => item.id === id)),
+                                    index => index != -1
                                 )
-                                onChange({...state,
+                                if (emphasisId == null || !ids.includes(emphasisId)) emphasisId = _.last(ids);
+                                //console.log(`Selecting using ids: ${indexes.toString()}`, emphasisId);
+                                let selectedIndex = _.findIndex(items, (it: any) => it.id === emphasisId);
+                                if (selectedIndex === -1) selectedIndex = null;
+                                onChange({
+                                    ...state,
                                     selectedIds: ids,
                                     selectedIndexes: indexes,
-                                    selectedId: emphasisId,
-                                    selectedIndex: _.findIndex(items, (it: any) => it.id === emphasisId)
+                                    selectedId: _.last(ids),
+                                    selectedIndex: selectedIndex
                                 }, update)
+                                //FIXME We may need an extra update here
                                 // selectId(_.last(emphasisId), true)
-                                //if(update) this.forceUpdate();
+                                if (update) this.forceUpdate();
                             }
                             //TODO Assisted addition / removal from selection
                             const addToSelection = (index) => {
 
                             }
+
+                            // @deprecated
+                            const selectIndex = (newIndex: number, update: boolean = true) => {
+                                selectIndexes([newIndex].filter(i => i != null), newIndex, update);
+
+                                //Old impl
+                                // if (newIndex != selectedIndex) {
+                                //     console.log(`Changing selectedIndex from ${selectedIndex} to ${newIndex}`);
+                                //     onChange({
+                                //         ...state,
+                                //         selectedIndex: newIndex,
+                                //         selectedId: _.get(items[newIndex], 'id', null)
+                                //     }, update);
+                                //     if (update) this.forceUpdate()
+                                // }
+                            };
+                            // @deprecated
+                            const selectId = (id: number | null, update: boolean = true) => {
+                                selectIds([id].filter(i => i != null), id, update)
+
+                                //Old impl
+                                // if (id == null) {
+                                //     selectIndex(null);
+                                //     return
+                                // }
+                                // const index = _.findIndex(items, (it: any) => it.id === id);
+                                // selectIndex(index, update)
+                            };
+                            //If single select 0
+                            if (single) selectIndex(0);
+                            const fixSelection = () => {
+                                let lastCreatedId = lastCreated.id;
+                                if (selectedIndex == null && lastCreatedId == null) return;
+                                if (items.length === 0) {
+                                    //selectIndex(null);
+                                    return
+                                }
+                                let thisPath = namespace.join('.');
+                                //console.log(`Fixing selection...`, lastCreated, thisPath);
+                                if (lastCreatedId != null && lastCreated.path === thisPath) {
+                                    if (!items.map(it => it.id).includes(lastCreatedId)) {
+                                        console.log(`Canceling update`);
+                                        //if (!this.state.invalid) refetch();
+                                        //this.state.invalid = true;
+                                        return;
+                                    }
+                                    console.log(`Selecting ID lastCreated`, lastCreatedId);
+                                    lastCreated = {id: null, path: null};
+                                    // setTimeout(() => {
+                                    //      requestAnimationFrame(() => selectId(lastCreatedId, true))
+                                    // },1850);
+                                    let selectNew = () => {
+                                        console.log(`Selected new ${lastCreatedId}`);
+                                        this.state.invalid = false
+                                        selectIds([lastCreatedId], lastCreatedId, true);
+                                        //setTimeout(() => this.forceUpdate(), 1)
+                                    };
+                                    console.log(`Scheduling selection`);
+                                    // setTimeout(selectNew, 600);
+                                    selectNew();
+                                    //setTimeout(selectNew, 1200);
+                                    // requestAnimationFrame(() => {
+                                    // setTimeout(selectNew, 1500)
+                                    // });
+                                    return
+                                }
+                                // const validIndex = Math.max(0, Math.min(selectedIndex, items.length - 1));
+                                // selectIndex(validIndex)
+                            };
+                            fixSelection();
 
 
                             const setEditIndex = (newIndex) => {
@@ -285,9 +346,12 @@ class Entity extends Component<EntityProps> {
                             if (this.props.additionalRefetchQueries != null) {
                                 const additionalRefetchQueriesWithId = this.props.additionalRefetchQueries
                                     .map(arq => {
-                                        if(_.get(arq, 'variables.id') == 'id') {
-                                            if(selectedItem == null) return null;
-                                            return {query: arq.query, variables: {...arq.variables, id: selectedItem.id}};
+                                        if (_.get(arq, 'variables.id') == 'id') {
+                                            if (selectedItem == null) return null;
+                                            return {
+                                                query: arq.query,
+                                                variables: {...arq.variables, id: selectedItem.id}
+                                            };
                                         }
                                         return arq;
                                     })
@@ -299,10 +363,11 @@ class Entity extends Component<EntityProps> {
                                     const idKey = _.keysIn(data).filter(k => k.startsWith('create'))[0]
                                     if (idKey == null) return;
                                     const id = _.get(data, [idKey, 'id'])
-                                    console.log(`Created ID completed `, id);
+                                    //console.log(`Created ID completed `, id);
                                     lastCreated.id = id;
                                     lastCreated.path = namespace.join('.');
-                                     //setTimeout(() => selectNextId(), 1000)
+                                    //setTimeout(() => selectId(lastCreated.id), 1000)
+                                    //setTimeout(() => fixSelection());
                                 }
                             }
                             return <All
@@ -374,6 +439,7 @@ class Entity extends Component<EntityProps> {
                                         selectedIndex,
                                         selectedIndexes,
                                         selectedIds,
+                                        selectedId,
                                         selectedItem,
                                         editingIndex,
                                         editingId: editingItemId,
