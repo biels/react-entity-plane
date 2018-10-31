@@ -75,6 +75,7 @@ export interface EntityProps {
     query?: string
     avoidUnmounting?: boolean
     poll?: boolean
+    pollInterval?: number
 
 }
 
@@ -168,8 +169,9 @@ class Entity extends Component<EntityProps> {
                     // setEntityState({...state, query}, false)
                     let avoidUnmounting = this.props.avoidUnmounting;
                     avoidUnmounting = avoidUnmounting || this.props.fetchPolicy !== 'cache-only'
-                    let pollInterval = (!this.props.poll || this.props.fetchPolicy == 'cache-first' || this.props.fetchPolicy == 'cache-only') ? undefined
-                        : 11000 + (!single ? 32000 : 0) + this.state.randomPollingOffset;
+                    let defaultPollInterval = ((!this.props.poll || this.props.fetchPolicy == 'cache-first' || this.props.fetchPolicy == 'cache-only') ? undefined
+                        : 11000 + (!single ? 32000 : 0) + this.state.randomPollingOffset);
+                    let pollInterval = this.props.pollInterval || defaultPollInterval;
                     const handleQueryCompleted = () => {
 
                     }
