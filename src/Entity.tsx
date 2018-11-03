@@ -62,6 +62,8 @@ export interface EntityRenderProps {
     entityInfo: EntityInfo
     parentEntityInfo: EntityInfo
     relationInfo: RelationInfo
+    startPolling: (interval: number) => void
+    stopPolling: () => void
 }
 
 export interface EntityProps {
@@ -178,7 +180,8 @@ class Entity extends Component<EntityProps> {
                     return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}
                                          selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
                                          onCompleted={handleQueryCompleted}>
-                        {({data, refetch, client}: { data: any, refetch: Function, client: ApolloClient<any> }) => {
+                        {({data, refetch, client, startPolling, stopPolling}:
+                              { data: any, refetch: Function, client: ApolloClient<any>, startPolling: (interval: number) => void, stopPolling: () => void }) => {
                             let items = _.get(data, query.selector, null);
 
                             // let items = _.sortBy(unsortedItems, ['id']);
@@ -469,7 +472,9 @@ class Entity extends Component<EntityProps> {
                                         clear,
                                         entityInfo,
                                         parentEntityInfo,
-                                        relationInfo
+                                        relationInfo,
+                                        startPolling,
+                                        stopPolling
                                     })
                                 }}
                             </All>
