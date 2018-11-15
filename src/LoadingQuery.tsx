@@ -7,6 +7,8 @@ import {Button, Intent, NonIdealState, Spinner} from "@blueprintjs/core";
 import {NetworkStatus} from "apollo-client";
 import _ from 'lodash';
 import formatTsDiagnostics from "ts-jest/dist/utils/format-diagnostics";
+import {timeout} from "async";
+import Timer = NodeJS.Timer;
 
 const SpinnerContainer = styled.div`
     display: grid;
@@ -35,19 +37,27 @@ export interface LoadingQueryProps<TData = any, TVariables = OperationVariables>
     selector?: string
 }
 
+let debugging = false;
 
 class LoadingQuery<TData = any, TVariables = OperationVariables> extends Component<LoadingQueryProps> {
     state = {
         loaded: false,
         broken: false
     }
-    componentDidMount(){
-          setTimeout(() => {
-              if(this.state.loaded) return;
-              // console.log(`Broken!`);
-              this.setState({broken: true});
-          }, 1900)
+    timeout: Timer;
+
+    componentDidMount() {
+        this.timeout = setTimeout(() => {
+            if (this.state.loaded) return;
+            // console.log(`Broken!`);
+            this.setState({broken: true});
+        }, debugging ? 1900 : 25000)
     }
+
+    componentWillUnmount(): void {
+        clearTimeout(this.timeout)
+    }
+
     render() {
         const {size, ...rest} = this.props
         return <Query {...rest}>

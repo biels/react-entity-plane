@@ -75,6 +75,7 @@ export interface EntityProps {
     children: (props: EntityRenderProps) => any
     root?: boolean
     query?: string
+    queryIndex?: number
     avoidUnmounting?: boolean
     poll?: boolean
     pollInterval?: number
@@ -168,6 +169,7 @@ class Entity extends Component<EntityProps> {
                     if (query == null) {
                         return err(`Could not find a query for ${namespace.join('.')}`)
                     }
+
                     // setEntityState({...state, query}, false)
                     let avoidUnmounting = this.props.avoidUnmounting;
                     avoidUnmounting = avoidUnmounting || this.props.fetchPolicy !== 'cache-only'
@@ -176,10 +178,16 @@ class Entity extends Component<EntityProps> {
                     let pollInterval = this.props.pollInterval || defaultPollInterval;
                     const handleQueryCompleted = () => {
 
+                    };
+                    let gqlQuery = query.query;
+                    if(_.isArray(gqlQuery)){
+                        // Multi query
+                        let index = this.props.queryIndex || 0;
+                        gqlQuery = gqlQuery[index];
                     }
-                    return <LoadingQuery query={query.query} variables={variables} fetchPolicy={this.props.fetchPolicy}
-                                         selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
-                                         onCompleted={handleQueryCompleted}>
+                    return <LoadingQuery query={gqlQuery} variables={variables} fetchPolicy={this.props.fetchPolicy}
+                                                                  selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
+                                                                  onCompleted={handleQueryCompleted}>
                         {({data, refetch, client, startPolling, stopPolling}:
                               { data: any, refetch: Function, client: ApolloClient<any>, startPolling: (interval: number) => void, stopPolling: () => void }) => {
                             let items = _.get(data, query.selector, null);
