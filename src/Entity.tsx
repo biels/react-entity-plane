@@ -5,14 +5,12 @@ import LoadingQuery from "./LoadingQuery";
 import {EntityInfo, EntityInfoKey, EntityQuery, RelationInfo} from "./types/entities";
 import {Mutation} from "react-apollo";
 import {FetchPolicy, MutationOptions, PureQueryOptions} from "apollo-client";
-import {DocumentNode} from "graphql";
+import {DocumentNode, FragmentDefinitionNode, SelectionSetNode} from "graphql";
 import {NonIdealState} from "@blueprintjs/core";
 import {NavigateParams} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import {Namespace} from "react-namespaces";
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
-import {on} from "cluster";
-import {selectLimit} from "async";
 import ApolloClient from "apollo-client/ApolloClient";
 import {EntityPlaneStateNode} from "./EntityContext";
 import {Simulate} from "react-dom/test-utils";
@@ -74,12 +72,14 @@ export interface EntityProps {
     additionalRefetchQueries?: [{ query, variables }]
     children: (props: EntityRenderProps) => any
     root?: boolean
+    fragment?: any
     query?: string
     queryIndex?: number
     avoidUnmounting?: boolean
     poll?: boolean
     pollInterval?: number
-
+    master?: boolean
+    detail?: boolean
 }
 
 let lastCreated = {id: null, path: null};
@@ -179,12 +179,29 @@ class Entity extends Component<EntityProps> {
                     const handleQueryCompleted = () => {
 
                     };
-                    let gqlQuery = query.query;
-                    if(_.isArray(gqlQuery)){
-                        // Multi query
-                        let index = this.props.queryIndex || 0;
-                        gqlQuery = gqlQuery[index];
+                    let gqlQuery: DocumentNode = query.query;
+                    // Inject fragment if it is missing one
+                    const inlineMissingFragments = (query: DocumentNode, fragment: FragmentDefinitionNode) => {
+                        const hasFieldsFragmentInside = (sels: SelectionSetNode) => {
+                            sels.selections.forEach(innerSels => {
+                                if(innerSels.kind === "FragmentSpread"){
+                                    if(innerSels.name.value === 'Fields') return true;
+                                }
+                                if(innerSels.kind === "Field"){
+                                    if(innerSels.selectionSet != null ) {
+                                        return hasFieldsFragmentInside(innerSels.selectionSet)
+                                    }
+                                }
+                            })
+                        }
+                        query.definitions.forEach(def => {
+                            if (def.kind === "OperationDefinition") {
+                                const missing = hasFieldsFragmentInside(def.selectionSet)
+                               // TODO if(missing) def.fragments
+                            }
+                        })
                     }
+                    // End fragment injection ----
                     return <LoadingQuery query={gqlQuery} variables={variables} fetchPolicy={this.props.fetchPolicy}
                                                                   selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
                                                                   onCompleted={handleQueryCompleted}>
