@@ -1,4 +1,4 @@
-import React, {Component, ComponentType} from 'react';
+import React, {Component} from 'react';
 import _ from "lodash";
 import EntityContextSpy from "./EntityContextSpy";
 import LoadingQuery from "./LoadingQuery";
@@ -50,6 +50,8 @@ export interface EntityRenderProps {
     selectIds: (ids: number[], emphasisId: number, update: boolean) => any,
     startEditing: (index?: number | null) => any,
     cancelEdition: () => void
+    startCreating: () => void
+    cancelCreation: () => void
     refetch: () => void
     single: boolean
     openInOwnPage: (index: number, params?: Partial<NavigateParams>, id?: boolean) => void
@@ -62,7 +64,6 @@ export interface EntityRenderProps {
     relationInfo: RelationInfo
     startPolling: (interval: number) => void
     stopPolling: () => void
-    field: () => any
 }
 
 export interface EntityProps {
@@ -185,11 +186,11 @@ class Entity extends Component<EntityProps> {
                     const inlineMissingFragments = (query: DocumentNode, fragment: FragmentDefinitionNode) => {
                         const hasFieldsFragmentInside = (sels: SelectionSetNode) => {
                             sels.selections.forEach(innerSels => {
-                                if(innerSels.kind === "FragmentSpread"){
-                                    if(innerSels.name.value === 'Fields') return true;
+                                if (innerSels.kind === "FragmentSpread") {
+                                    if (innerSels.name.value === 'Fields') return true;
                                 }
-                                if(innerSels.kind === "Field"){
-                                    if(innerSels.selectionSet != null ) {
+                                if (innerSels.kind === "Field") {
+                                    if (innerSels.selectionSet != null) {
                                         return hasFieldsFragmentInside(innerSels.selectionSet)
                                     }
                                 }
@@ -198,14 +199,14 @@ class Entity extends Component<EntityProps> {
                         query.definitions.forEach(def => {
                             if (def.kind === "OperationDefinition") {
                                 const missing = hasFieldsFragmentInside(def.selectionSet)
-                               // TODO if(missing) def.fragments
+                                // TODO if(missing) def.fragments
                             }
                         })
                     }
                     // End fragment injection ----
                     return <LoadingQuery query={gqlQuery} variables={variables} fetchPolicy={this.props.fetchPolicy}
-                                                                  selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
-                                                                  onCompleted={handleQueryCompleted}>
+                                         selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
+                                         onCompleted={handleQueryCompleted}>
                         {({data, refetch, client, startPolling, stopPolling}:
                               { data: any, refetch: Function, client: ApolloClient<any>, startPolling: (interval: number) => void, stopPolling: () => void }) => {
                             let items = _.get(data, query.selector, null);
@@ -356,6 +357,13 @@ class Entity extends Component<EntityProps> {
                                     this.forceUpdate()
                                 }
                             };
+                            const setCreating = (value: boolean) => {
+                                if (state.creating !== value) {
+                                    onChange({...state, creating: value});
+                                }
+                            };
+                            const startCreating = () => setCreating(true)
+                            const cancelCreation = () => setCreating(false)
                             const cancelEdition = () => setEditIndex(null);
                             const openInOwnPage = (index: number, params?: Partial<NavigateParams>, id?: boolean) => {
                                 if (!id) index = _.clamp(index, 0, items.length - 1);
@@ -489,6 +497,8 @@ class Entity extends Component<EntityProps> {
                                         removeSelected: handleRemoveSelected,
                                         startEditing: setEditIndex,
                                         cancelEdition,
+                                        startCreating,
+                                        cancelCreation,
                                         refetch: handleRefetch,
                                         single,
                                         openInOwnPage,

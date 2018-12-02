@@ -6,13 +6,22 @@ enum EntityFieldType{
 interface EntityFieldValidation {
     required: boolean
 }
+export type maskArray = Array<string | RegExp>;
 interface EntityFieldMask {
-    mask: any
-    placeholder: string
-    guide: boolean
+    mask?: maskArray | ((value: string) => maskArray);
+    guide?: boolean;
+    placeholderChar?: string;
+    keepCharPositions?: boolean;
+    pipe?: (
+        conformedValue: string,
+        config: any
+    ) => false | string | { value: string; indexesOfPipedChars: number[] };
+
+    showMask?: boolean;
 }
 export interface EntityFieldInfo {
     name: string
+    label?: string
     icon?: string,
     type?: EntityFieldType // Default to string,
     validation?: EntityFieldValidation

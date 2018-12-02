@@ -10,6 +10,7 @@ export interface EntityPlaneStateNode {
     selectedIndexes: number[],
     selectedIds: number[],
     editingIndex: number | null,
+    creating: boolean
     selectedId: number | string | null,
     query?: EntityQuery
     state: any

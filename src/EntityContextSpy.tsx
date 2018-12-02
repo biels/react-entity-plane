@@ -142,6 +142,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         selectedIndexes: [],
                         selectedIds: [],
                         editingIndex: null,
+                        creating: false,
                         relations: {},
                         state: {}
                     }, update)
