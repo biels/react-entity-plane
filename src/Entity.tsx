@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, ComponentType} from 'react';
 import _ from "lodash";
 import EntityContextSpy from "./EntityContextSpy";
 import LoadingQuery from "./LoadingQuery";
@@ -62,6 +62,7 @@ export interface EntityRenderProps {
     relationInfo: RelationInfo
     startPolling: (interval: number) => void
     stopPolling: () => void
+    field: () => any
 }
 
 export interface EntityProps {
