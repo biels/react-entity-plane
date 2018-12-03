@@ -52,6 +52,7 @@ export interface EntityRenderProps {
     cancelEdition: () => void
     startCreating: () => void
     cancelCreation: () => void
+    creating: boolean
     refetch: () => void
     single: boolean
     openInOwnPage: (index: number, params?: Partial<NavigateParams>, id?: boolean) => void
@@ -499,6 +500,7 @@ class Entity extends Component<EntityProps> {
                                         cancelEdition,
                                         startCreating,
                                         cancelCreation,
+                                        creating: state.creating,
                                         refetch: handleRefetch,
                                         single,
                                         openInOwnPage,

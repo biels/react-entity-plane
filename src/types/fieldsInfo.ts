@@ -1,13 +1,13 @@
 import {ComponentType} from "react";
 
-enum EntityFieldType{
+export enum EntityFieldType{
     string, boolean, number, email, date, id
 }
-interface EntityFieldValidation {
-    required: boolean
+export interface EntityFieldValidation {
+
 }
 export type maskArray = Array<string | RegExp>;
-interface EntityFieldMask {
+export interface EntityFieldMask {
     mask?: maskArray | ((value: string) => maskArray);
     guide?: boolean;
     placeholderChar?: string;
@@ -25,8 +25,10 @@ export interface EntityFieldInfo {
     icon?: string,
     type?: EntityFieldType // Default to string,
     validation?: EntityFieldValidation
+    required?: boolean
     mask?: EntityFieldMask
     component?: ComponentType
-
+    default?: any
+    create?: boolean
     relation?: false | 'single' | 'multi'
 }
