@@ -6,7 +6,7 @@ interface EntityComponentProps {
     [any: string]: any
 }
 
-export type EntityComponent = ComponentType<EntityComponentProps>;
+export type EntityComponent = any | ComponentType<EntityComponentProps>;
 
 export interface EntityComponents {
     create?: EntityComponent

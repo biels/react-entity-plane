@@ -1,5 +1,6 @@
 import {DocumentNode} from "graphql";
 import {EntityFieldInfo} from "./fieldsInfo";
+import {EntityComponents} from "./componentsInfo";
 
 export type EntityInfoKey = string
 export type EntityID = string | number
@@ -38,6 +39,7 @@ export interface EntityInfo {
     name: EntityInfoKey
     type?: 'single' | 'multi'
     fields?: EntityFieldInfo[]
+    components?: EntityComponents
     queries: EntityQueries
     mutations: EntityMutations
     display: {
