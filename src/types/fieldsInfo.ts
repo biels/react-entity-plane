@@ -1,7 +1,7 @@
 import {ComponentType} from "react";
 
 export enum EntityFieldType{
-    string, boolean, number, email, date, id
+    string, textarea, boolean, number, email, date, id
 }
 export interface EntityFieldValidation {
 

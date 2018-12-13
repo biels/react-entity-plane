@@ -1,6 +1,7 @@
 import {DocumentNode} from "graphql";
 import {EntityFieldInfo} from "./fieldsInfo";
 import {EntityComponents} from "./componentsInfo";
+import {IconName} from "@blueprintjs/core";
 
 export type EntityInfoKey = string
 export type EntityID = string | number
@@ -44,7 +45,9 @@ export interface EntityInfo {
     mutations: EntityMutations
     display: {
         singular: string
-        plural: string
+        plural: string,
+        gender?: 'm' | 'f',
+        icon?: IconName
     },
     relations: {
         [realtionName: string]: RelationInfo
