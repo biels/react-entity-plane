@@ -46,7 +46,7 @@ export interface EntityInfo {
     display: {
         singular: string
         plural: string,
-        gender?: 'm' | 'f',
+        gender?: boolean, //T: Masculine, F: Feminine
         icon?: IconName
     },
     relations: {
