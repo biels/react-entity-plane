@@ -6,7 +6,6 @@ import {QueryProps} from "react-apollo/Query";
 import {Button, Intent, NonIdealState, Spinner} from "@blueprintjs/core";
 import {NetworkStatus} from "apollo-client";
 import _ from 'lodash';
-import formatTsDiagnostics from "ts-jest/dist/utils/format-diagnostics";
 import {timeout} from "async";
 import Timer = NodeJS.Timer;
 
