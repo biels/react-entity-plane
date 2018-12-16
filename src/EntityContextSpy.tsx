@@ -4,12 +4,11 @@ import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer, EntityPlaneProvidedObject} from "./EntityPlaneProvider";
 import {EntitiesObject, EntityInfo, RelationInfo} from "./types/entities";
-import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
-import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
-import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
+import {ProvidedNavigationContext} from "react-navigation-plane";
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
 import {diff, addedDiff, deletedDiff, updatedDiff, detailedDiff} from 'deep-object-diff';
+import {NavigationSpy, PageContextSpy} from "react-navigation-plane";
 
 export interface EntityContextSpyRenderProps {
     entityInfo: EntityInfo
