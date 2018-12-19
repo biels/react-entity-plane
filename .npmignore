@@ -1,7 +1,8 @@
 # remove src to link directly to source
-src
+#src
+lib
 tsconfig.json
 tslint.json
-../MedicalSoft/Invoices/invoices/invoices-app/.prettierrc
+
 jestconfig.json
 *.test.ts
