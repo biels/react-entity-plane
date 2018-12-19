@@ -4,11 +4,11 @@ import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer, EntityPlaneProvidedObject} from "./EntityPlaneProvider";
 import {EntitiesObject, EntityInfo, RelationInfo} from "./types/entities";
-import {ProvidedNavigationContext} from "react-navigation-plane";
+
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
 import {diff, addedDiff, deletedDiff, updatedDiff, detailedDiff} from 'deep-object-diff';
-import {NavigationSpy, PageContextSpy} from "react-navigation-plane";
+import {NavigationSpy, PageContextSpy, ProvidedNavigationContext} from "react-navigation-plane";
 
 export interface EntityContextSpyRenderProps {
     entityInfo: EntityInfo
@@ -68,8 +68,9 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const getParentState = (): EntityPlaneStateNode => _.get(entityContext.value.stateNodes, parentFieldPath);
                 const onStateChange = (newLocalState, update: boolean = true) => {
                     //On state change
-                    // console.log('Updating local state: ', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
-                    // const initial = _.get(newLocalState, 'state.pickerOpen')
+                    // console.log('Updating local state: ', newLocalState, getLocalState(),
+                    // detailedDiff(newLocalState, getLocalState())); const initial = _.get(newLocalState,
+                    // 'state.pickerOpen')
                     const stateTemplate = _.set(_.cloneDeep(entityContext.value.stateNodes), fieldPath, newLocalState)
                     let newState = _.merge({}, entityContext.value.stateNodes, stateTemplate);
                     // console.log('onStateChange', newState, stateTemplate);
@@ -84,9 +85,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     // const final = _.get(getLocalState(), 'state.pickerOpen')
                     // console.log('State diff', initial, final);
                     // if(!_.isEqual(newLocalState, getLocalState())){
-                    //     console.error('Error updating states expected / actual:', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
-                    // }else {
-                    //     console.info('State updated correctly!');
+                    //     console.error('Error updating states expected / actual:', newLocalState, getLocalState(),
+                    // detailedDiff(newLocalState, getLocalState())); }else { console.info('State updated correctly!');
                     // }
                 };
                 const topLevel = parentNamespace.length == 0;

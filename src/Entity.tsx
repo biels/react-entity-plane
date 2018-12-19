@@ -7,7 +7,6 @@ import {Mutation} from "react-apollo";
 import {FetchPolicy, MutationOptions, PureQueryOptions} from "apollo-client";
 import {DocumentNode, FragmentDefinitionNode, SelectionSetNode} from "graphql";
 import {NonIdealState} from "@blueprintjs/core";
-import {NavigateParams} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
 import {Namespace} from "react-namespaces";
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
@@ -15,6 +14,7 @@ import ApolloClient from "apollo-client/ApolloClient";
 import {EntityPlaneStateNode} from "./EntityContext";
 import {Simulate} from "react-dom/test-utils";
 import invalid = Simulate.invalid;
+import {NavigateParams} from 'react-navigation-plane/src/NavigationContext/NavigationContext';
 
 
 export interface EntityObject {
@@ -382,7 +382,8 @@ class Entity extends Component<EntityProps> {
                             };
                             const handleRefetch = () => refetch(variables);
                             let refetchQueries: Array<PureQueryOptions> = [{query: query.query, variables: variables}];
-                            // if (parentRefetchQuery != null) refetchQueries.push({query: parentRefetchQuery, variables: {}});
+                            // if (parentRefetchQuery != null) refetchQueries.push({query: parentRefetchQuery,
+                            // variables: {}});
                             if (this.props.additionalRefetchQueries != null) {
                                 const additionalRefetchQueriesWithId = this.props.additionalRefetchQueries
                                     .map(arq => {
