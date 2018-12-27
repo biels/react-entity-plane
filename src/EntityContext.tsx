@@ -24,8 +24,8 @@ interface EntityPlaneStateInfo {
 }
 
 export interface EntityContext{
-    stateNodes: EntityPlaneStateInfo
-    infoNodes: EntityPlaneInfo
+    stateNodes?: EntityPlaneStateInfo
+    infoNodes?: EntityPlaneInfo
     rootEntityId?: string | number
 }
 

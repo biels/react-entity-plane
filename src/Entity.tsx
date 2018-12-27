@@ -46,7 +46,7 @@ export interface EntityRenderProps {
     updateEditing: (body: Object, onCompleted?: (data: any) => void) => any
     selectIndex: (index: number | null) => any,
     selectIndexes: (indexes: number[], emphasisIndex: number, update: boolean) => any,
-    selectId: (id: number | null) => any,
+    selectId: (id: number | null, update?: boolean) => any,
     selectIds: (ids: number[], emphasisId: number, update: boolean) => any,
     startEditing: (index?: number | null) => any,
     cancelEdition: () => void
