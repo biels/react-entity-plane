@@ -92,7 +92,7 @@ class Entity extends Component<EntityProps> {
         randomPollingOffset: _.random(0, 12000),
         invalid: false
     }
-
+    fetched = false
     shouldComponentUpdate() {
         //if(this.state.invalid) return false;
         return true;
@@ -218,6 +218,12 @@ class Entity extends Component<EntityProps> {
                                     return <div>Waiting...</div>;
                                 console.log(`Bad selector ${query.selector}, data:`, data);
                                 return <div>Bad selector {query.selector}, data: {JSON.stringify(data)}</div>
+                            }
+
+                            //Force refetch on every mounted entity
+                            if((this.props.fetchPolicy === 'cache-and-network' || this.props.fetchPolicy === 'cache-first') && !this.fetched){
+                                setTimeout(refetch, 10)
+                                this.fetched = true
                             }
 
                             if (single) {
