@@ -65,6 +65,7 @@ export interface EntityRenderProps {
     relationInfo: RelationInfo
     startPolling: (interval: number) => void
     stopPolling: () => void
+    getEntityInfo: (entityName: string) => EntityInfo
 }
 
 export interface EntityProps {
@@ -221,8 +222,8 @@ class Entity extends Component<EntityProps> {
                             }
 
                             //Force refetch on every mounted entity
-                            if((this.props.fetchPolicy === 'cache-and-network' || this.props.fetchPolicy === 'cache-first') && !this.fetched){
-                                setTimeout(refetch, 10)
+                            if((this.props.fetchPolicy !== 'cache-only') && !this.fetched){
+                                setTimeout(refetch, 20)
                                 this.fetched = true
                             }
 
@@ -519,7 +520,8 @@ class Entity extends Component<EntityProps> {
                                         parentEntityInfo,
                                         relationInfo,
                                         startPolling,
-                                        stopPolling
+                                        stopPolling,
+                                        getEntityInfo
                                     })
                                 }}
                             </All>

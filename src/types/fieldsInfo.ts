@@ -1,7 +1,8 @@
 import {ComponentType} from "react";
+import {IconName, Intent} from "@blueprintjs/core";
 
 export enum EntityFieldType{
-    string, textarea, boolean, number, email, date, id, relation //Relation is specail, it uses relation form realtions info
+    string, textarea, boolean, number, email, date, id, enum, relation //Relation is specail, it uses relation form realtions info
 }
 export interface EntityFieldValidation {
 
@@ -19,6 +20,12 @@ export interface EntityFieldMask {
 
     showMask?: boolean;
 }
+export interface FieldEnumValues {
+    value: any,
+    display?: string,
+    icon?: IconName
+    intent?: Intent
+}
 export interface EntityFieldInfo {
     name: string
     label?: string
@@ -30,5 +37,6 @@ export interface EntityFieldInfo {
     component?: ComponentType
     default?: any
     create?: boolean
-    relation?: false | 'single' | 'multi'
+    relation?: false | 'single' | 'multi',
+    values?: FieldEnumValues[] // For enum
 }
