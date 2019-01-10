@@ -28,8 +28,9 @@ export interface FieldEnumValues {
 }
 export interface EntityFieldInfo {
     name: string
-    label?: string
-    icon?: string,
+    label?: string,
+    help?: string,
+    icon?: IconName,
     type?: EntityFieldType // Default to string,
     validation?: EntityFieldValidation
     required?: boolean
