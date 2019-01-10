@@ -5,7 +5,13 @@ export enum EntityFieldType{
     string, textarea, boolean, number, email, date, id, enum, relation //Relation is specail, it uses relation form realtions info
 }
 export interface EntityFieldValidation {
-
+    min?: number
+    max?: number
+    decimals?: number
+    custom?: (value, allValues) => any
+    maxLength?: number
+    minLength?: number
+    match?: RegExp
 }
 export type maskArray = Array<string | RegExp>;
 export interface EntityFieldMask {
@@ -20,11 +26,15 @@ export interface EntityFieldMask {
 
     showMask?: boolean;
 }
+export interface NumberFormat {
+
+}
 export interface FieldEnumValues {
     value: any,
     display?: string,
     icon?: IconName
     intent?: Intent
+    showThrough?: boolean
 }
 export interface EntityFieldInfo {
     name: string
@@ -39,5 +49,7 @@ export interface EntityFieldInfo {
     default?: any
     create?: boolean
     relation?: false | 'single' | 'multi',
+    serial?: boolean
     values?: FieldEnumValues[] // For enum
+    // format: NumberFormat
 }
