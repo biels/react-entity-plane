@@ -29,6 +29,9 @@ export interface EntityFieldMask {
 export interface NumberFormat {
 
 }
+export enum EnumStyle {
+    select, option, button
+}
 export interface FieldEnumValues {
     value: any,
     display?: string,
@@ -50,6 +53,7 @@ export interface EntityFieldInfo {
     create?: boolean
     relation?: false | 'single' | 'multi',
     serial?: boolean
+    forceShow?: boolean
     values?: FieldEnumValues[] // For enum
     // format: NumberFormat
 }
