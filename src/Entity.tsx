@@ -216,7 +216,27 @@ class Entity extends Component<EntityProps> {
                             // let items = _.sortBy(unsortedItems, ['id']);
                             if (items == null) {
                                 if (this.props.fetchPolicy == "cache-only")
-                                    return <div>Waiting...</div>;
+                                    return this.props.children({
+                                        items: [],
+                                        selectedIndex,
+                                        selectedIndexes,
+                                        selectedIds,
+                                        selectedId,
+                                        editingIndex,
+                                        editing: editingIndex === selectedIndex,
+                                        creating: state.creating,
+                                        single,
+                                        setEntityState,
+                                        entityState,
+                                        getLocalState,
+                                        clear,
+                                        entityInfo,
+                                        parentEntityInfo,
+                                        relationInfo,
+                                        startPolling,
+                                        stopPolling,
+                                        getEntityInfo
+                                    } as any);
                                 console.log(`Bad selector ${query.selector}, data:`, data);
                                 return <div>Bad selector {query.selector}, data: {JSON.stringify(data)}</div>
                             }
