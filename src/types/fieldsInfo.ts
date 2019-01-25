@@ -39,6 +39,12 @@ export interface FieldEnumValues {
     intent?: Intent
     showThrough?: boolean
 }
+
+interface EntityFieldAction {
+    name: string
+
+}
+
 export interface EntityFieldInfo {
     name: string
     label?: string,
@@ -55,5 +61,6 @@ export interface EntityFieldInfo {
     serial?: boolean
     forceShow?: boolean
     values?: FieldEnumValues[] // For enum
+    actions?: EntityFieldAction[]
     // format: NumberFormat
 }

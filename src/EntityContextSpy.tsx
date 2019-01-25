@@ -122,6 +122,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const getRelationInfo = () => {
                     if (!isRelation) return null;
                     const parentEntityState = getParentState();
+                    if(parentEntityState == null) throw new Error(err(`There is no parent entity state to resolve relation ${nsFrame} in ${namespace.join('.')}`))
                     const parentEntityName = parentEntityState.entityName;
                     const parentEntityInfo = getEntityInfo(parentEntityName);
                     return parentEntityInfo.relations[nsFrame]
@@ -129,7 +130,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const isValidEntityName = (entityName) => {
                     return _.get(entities, entityName) != null
                 }
-                let preRelation = getRelationInfo();
+                let preRelation: RelationInfo = getRelationInfo();
                 if(isRelation && preRelation == null){
                     return err(`Could not find relationInfo for ${namespace.join('.')}`)
                 }
