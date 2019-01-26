@@ -73,6 +73,7 @@ export interface EntityProps {
     relation?: string
     ids?: number | string
     fetchPolicy?: FetchPolicy
+    params?: {[param: string]: any}
     additionalRefetchQueries?: [{ query, variables }]
     children: (props: EntityRenderProps) => any
     root?: boolean
@@ -206,7 +207,7 @@ class Entity extends Component<EntityProps> {
                         })
                     }
                     // End fragment injection ----
-                    return <LoadingQuery query={gqlQuery} variables={variables} fetchPolicy={this.props.fetchPolicy}
+                    return <LoadingQuery query={gqlQuery} variables={{...variables, ...this.props.params}} fetchPolicy={this.props.fetchPolicy}
                                          selector={avoidUnmounting ? query.selector : null} pollInterval={pollInterval}
                                          onCompleted={handleQueryCompleted}>
                         {({data, refetch, client, startPolling, stopPolling}:
