@@ -9,6 +9,8 @@ export type EntityID = string | number
 export interface Entity {
     id: EntityID
     name?: string
+    shortName?: string
+    [other: string]: any
 }
 export interface EntityQuery {
     query: DocumentNode,
@@ -47,7 +49,8 @@ export interface EntityInfo {
         singular: string
         plural: string,
         gender?: boolean, //T: Masculine, F: Feminine
-        icon?: IconName
+        icon?: IconName,
+        render?: (item: Entity) => any
     },
     relations: {
         [realtionName: string]: RelationInfo
