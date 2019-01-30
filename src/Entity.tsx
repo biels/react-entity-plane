@@ -353,18 +353,18 @@ class Entity extends Component<EntityProps> {
                                         //this.state.invalid = true;
                                         return;
                                     }
-                                    console.log(`Selecting ID lastCreated`, lastCreatedId);
+                                    // console.log(`Selecting ID lastCreated`, lastCreatedId);
                                     lastCreated = {id: null, path: null};
                                     // setTimeout(() => {
                                     //      requestAnimationFrame(() => selectId(lastCreatedId, true))
                                     // },1850);
                                     let selectNew = () => {
-                                        console.log(`Selected new ${lastCreatedId}`);
+                                        // console.log(`Selected new ${lastCreatedId}`);
                                         this.state.invalid = false
                                         selectIds([lastCreatedId], lastCreatedId, true);
                                         //setTimeout(() => this.forceUpdate(), 1)
                                     };
-                                    console.log(`Scheduling selection`);
+                                    // console.log(`Scheduling selection`);
                                     // setTimeout(selectNew, 600);
                                     selectNew();
                                     //setTimeout(selectNew, 1200);
