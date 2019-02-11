@@ -142,7 +142,7 @@ class Entity extends Component<EntityProps> {
                         if (this.props.query != null) {
                             query = relation.queries[this.props.query]
                         }
-                    } else if (this.props.root && topLevel && rootEntityId != null) {
+                    } else if (this.props.root && topLevel && (rootEntityId != null || entityInfo.singleId != null)) {
                         //Use Single entity (one) query
                         if (entityInfo.queries.one == null) {
                             let message = `Entity ${entityInfo.name} does not have a 'one' query`;
@@ -150,7 +150,7 @@ class Entity extends Component<EntityProps> {
                             return message
                         }
                         query = entityInfo.queries.one;
-                        variables = {id: rootEntityId}; // Take it from the page instead?
+                        variables = {id: rootEntityId || entityInfo.singleId}; // Take it from the page instead?
                         single = true
                     } else if (this.props.ids != null || entityInfo.type === "single") {
                         if (entityInfo.queries.one == null) return err(`Entity ${entityInfo.name} does not have a 'one' query`);

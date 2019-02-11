@@ -41,6 +41,7 @@ export interface RelationInfo {
 export interface EntityInfo {
     name: EntityInfoKey
     type?: 'single' | 'multi'
+    singleId?: number | string
     fields?: EntityFieldInfo[]
     components?: EntityComponents
     queries: EntityQueries

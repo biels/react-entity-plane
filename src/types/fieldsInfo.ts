@@ -55,7 +55,7 @@ export interface EntityFieldInfo {
     required?: boolean
     mask?: EntityFieldMask
     component?: ComponentType
-    default?: any
+    default?: (() => any) | any
     create?: boolean
     relation?: false | 'single' | 'multi',
     serial?: boolean
