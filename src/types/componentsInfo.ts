@@ -11,6 +11,8 @@ export type EntityComponent = any | ComponentType<EntityComponentProps>;
 export interface EntityComponents {
     create?: EntityComponent
     update?: EntityComponent
+    master?: EntityComponent
+    detail?: EntityComponent
     show?: EntityComponent
     pick?: EntityComponent //TODO Improve picker interface
 }

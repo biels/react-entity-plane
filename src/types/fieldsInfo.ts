@@ -1,7 +1,11 @@
 import {ComponentType} from "react";
 import {IconName, Intent} from "@blueprintjs/core";
+import {EntityComponent} from "./componentsInfo";
 
 export enum EntityFieldType{
+    string, textarea, boolean, number, email, date, id, enum, relation //Relation is specail, it uses relation form realtions info
+}
+export enum EntityFieldStyle{
     string, textarea, boolean, number, email, date, id, enum, relation //Relation is specail, it uses relation form realtions info
 }
 export interface EntityFieldValidation {
@@ -44,8 +48,8 @@ interface EntityFieldAction {
     name: string
 
 }
-
-export interface EntityFieldInfo {
+export type EntityFieldInfo = RelationEntityFieldInfo | PickerRelationEntityFieldInfo | BooleanEntityFieldInfo | BaseEntityFieldInfo;
+export interface BaseEntityFieldInfo {
     name: string
     label?: string,
     help?: string,
@@ -64,3 +68,19 @@ export interface EntityFieldInfo {
     actions?: EntityFieldAction[]
     // format: NumberFormat
 }
+export interface RelationEntityFieldInfo extends BaseEntityFieldInfo{
+    type: EntityFieldType.relation
+    style?: 'picker' | 'select'
+
+}
+export interface PickerRelationEntityFieldInfo extends BaseEntityFieldInfo{
+    type: EntityFieldType.relation
+    style: 'picker'
+    masterComponent?: EntityComponent
+    detailComponent?: EntityComponent
+}
+export interface BooleanEntityFieldInfo extends BaseEntityFieldInfo{
+    type: EntityFieldType.boolean
+    style?: 'checkbox' | 'switch'
+}
+
