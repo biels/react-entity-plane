@@ -4,12 +4,11 @@ import {EntityContextConsumer, EntityPlaneStateNode, ProvidedEntityContext} from
 import {Namespace} from "react-namespaces";
 import {EntityPlaneConsumer, EntityPlaneProvidedObject} from "./EntityPlaneProvider";
 import {EntitiesObject, EntityInfo, RelationInfo} from "./types/entities";
-import {ProvidedNavigationContext} from "react-navigation-plane/lib/NavigationContext/NavigationContext";
-import NavigationSpy from "react-navigation-plane/lib/NavigationContext/NavigationSpy";
-import PageContextSpy from "react-navigation-plane/lib/PageContext/PageContextSpy";
+
 import All from "react-namespaces/lib/All";
 import {err} from "./errorMessage";
 import {diff, addedDiff, deletedDiff, updatedDiff, detailedDiff} from 'deep-object-diff';
+import {NavigationSpy, PageContextSpy, ProvidedNavigationContext} from "react-navigation-plane";
 
 export interface EntityContextSpyRenderProps {
     entityInfo: EntityInfo
@@ -29,6 +28,7 @@ export interface EntityContextSpyRenderProps {
     entities: EntitiesObject
     onForeignKeyError: (error) => any
     getLocalState: () => object
+    clear: () => any
 }
 
 export interface EntityContextSpyProps {
@@ -68,8 +68,9 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const getParentState = (): EntityPlaneStateNode => _.get(entityContext.value.stateNodes, parentFieldPath);
                 const onStateChange = (newLocalState, update: boolean = true) => {
                     //On state change
-                    // console.log('Updating local state: ', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
-                    // const initial = _.get(newLocalState, 'state.pickerOpen')
+                    // console.log('Updating local state: ', newLocalState, getLocalState(),
+                    // detailedDiff(newLocalState, getLocalState())); const initial = _.get(newLocalState,
+                    // 'state.pickerOpen')
                     const stateTemplate = _.set(_.cloneDeep(entityContext.value.stateNodes), fieldPath, newLocalState)
                     let newState = _.merge({}, entityContext.value.stateNodes, stateTemplate);
                     // console.log('onStateChange', newState, stateTemplate);
@@ -82,11 +83,10 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                         // console.log('>>>> onStateChange', stateTemplate);
                     }
                     // const final = _.get(getLocalState(), 'state.pickerOpen')
-                     // console.log('State diff', initial, final);
+                    // console.log('State diff', initial, final);
                     // if(!_.isEqual(newLocalState, getLocalState())){
-                    //     console.error('Error updating states expected / actual:', newLocalState, getLocalState(), detailedDiff(newLocalState, getLocalState()));
-                    // }else {
-                    //     console.info('State updated correctly!');
+                    //     console.error('Error updating states expected / actual:', newLocalState, getLocalState(),
+                    // detailedDiff(newLocalState, getLocalState())); }else { console.info('State updated correctly!');
                     // }
                 };
                 const topLevel = parentNamespace.length == 0;
@@ -122,6 +122,7 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const getRelationInfo = () => {
                     if (!isRelation) return null;
                     const parentEntityState = getParentState();
+                    if(parentEntityState == null) throw new Error(err(`There is no parent entity state to resolve relation ${nsFrame} in ${namespace.join('.')}`))
                     const parentEntityName = parentEntityState.entityName;
                     const parentEntityInfo = getEntityInfo(parentEntityName);
                     return parentEntityInfo.relations[nsFrame]
@@ -129,21 +130,32 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                 const isValidEntityName = (entityName) => {
                     return _.get(entities, entityName) != null
                 }
-                if (getLocalState() == null) {
-                    //Initialize local value
-
-                    const entityName = isRelation ? getRelationInfo().entityName : nsFrame;
-                    if(!isValidEntityName(entityName)){
-                        return err(`${entityName} is not a valid entity name. Valid names are: ${_.keysIn(entities).toString()}`)
-                    }
-                    // console.log({entityName, topLevel});
+                let preRelation: RelationInfo = getRelationInfo();
+                if(isRelation && preRelation == null){
+                    return err(`Could not find relationInfo for ${namespace.join('.')}`)
+                }
+                const entityName = isRelation ? preRelation.entityName : nsFrame;
+                const clear = (update) => {
                     onStateChange({
                         entityName,
                         selectedIndex: null,
+                        selectedIndexes: [],
+                        selectedIds: [],
                         editingIndex: null,
+                        creating: false,
                         relations: {},
                         state: {}
-                    }, false)
+                    }, update)
+                }
+
+                if (getLocalState() == null) {
+                    //Initialize local value
+
+                    if (!isValidEntityName(entityName)) {
+                        return err(`${entityName} is not a valid entity name. Valid names are: ${_.keysIn(entities).toString()}`)
+                    }
+                    // console.log({entityName, topLevel});
+                    clear(true);
                     return null;
                 }
                 const entityInfo = getEntityInfo(getEntityName())
@@ -176,7 +188,8 @@ class EntityContextSpy extends Component<EntityContextSpyProps> {
                     isRelation,
                     navigate,
                     entities,
-                    onForeignKeyError: entityPlane.onForeignKeyError
+                    onForeignKeyError: entityPlane.onForeignKeyError,
+                    clear
                 } as EntityContextSpyRenderProps)
             }}
         </All>

@@ -7,7 +7,10 @@ import { diff, addedDiff, deletedDiff, updatedDiff, detailedDiff } from 'deep-ob
 export interface EntityPlaneStateNode {
     entityName: EntityInfoKey,
     selectedIndex: number | null,
+    selectedIndexes: number[],
+    selectedIds: number[],
     editingIndex: number | null,
+    creating: boolean
     selectedId: number | string | null,
     query?: EntityQuery
     state: any
@@ -21,8 +24,8 @@ interface EntityPlaneStateInfo {
 }
 
 export interface EntityContext{
-    stateNodes: EntityPlaneStateInfo
-    infoNodes: EntityPlaneInfo
+    stateNodes?: EntityPlaneStateInfo
+    infoNodes?: EntityPlaneInfo
     rootEntityId?: string | number
 }
 
@@ -35,8 +38,8 @@ interface EntityContextProviderProps {
     entityPlaneInfo?: EntityPlaneInfo
     rootEntityId?: string | number
 }
-let count = 0;
 class EntityContextProvider extends Component<EntityContextProviderProps> {
+    count = 0;
     state: EntityContext = {stateNodes: {}, infoNodes: {}}
     static getDerivedStateFromProps(props: EntityContextProviderProps, state: EntityContext){
         return {
@@ -47,9 +50,10 @@ class EntityContextProvider extends Component<EntityContextProviderProps> {
     }
     handleStateChange = (newValue, force: boolean = false) => {
         if(!force && _.isEqual(this.state.stateNodes, newValue)) return;
-        console.log(`Updating ${count} times`,  detailedDiff(this.state.stateNodes, newValue));
+        this.count++;
+        let diff: any = detailedDiff(this.state.stateNodes, newValue);
+        // console.log(`Updating ${this.count} times with `, diff.added, diff.deleted, diff.updated, newValue);
         this.setState({infoNodes: this.state.infoNodes, stateNodes: newValue}) // Merge?
-        count++;
         //if(force) this.forceUpdate(() => console.log('Forced update'));
     }
     render() {
