@@ -19,6 +19,7 @@ const {Provider, Consumer: EntityPlaneConsumer} = React.createContext<EntityPlan
  */
 class EntityPlaneProvider extends Component<EntityPlaneProviderProps> {
     render() {
+        // Add introspection query
         return <Provider value={{entities: this.props.entities, onForeignKeyError: this.props.onForeignKeyError}}>
             {this.props.children}
         </Provider>
