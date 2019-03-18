@@ -55,7 +55,7 @@
     "react-test-renderer": "^16.4.2",
     "styled-components": "^3.4.2",
     "ts-jest": "^23.10.5",
-    "typescript": "^3.2.2"
+    "typescript": "^3.4.0-rc"
   },
   "dependencies": {
     "deep-object-diff": "^1.1.0"
