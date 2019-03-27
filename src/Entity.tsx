@@ -15,6 +15,7 @@ import {EntityPlaneStateNode} from "./EntityContext";
 import {Simulate} from "react-dom/test-utils";
 import invalid = Simulate.invalid;
 import {NavigateParams} from 'react-navigation-plane/src/NavigationContext/NavigationContext';
+import {appearancesToFragment} from "./utils/appearancesToFragment";
 
 
 export interface EntityObject {
@@ -66,6 +67,7 @@ export interface EntityRenderProps {
     startPolling: (interval: number) => void
     stopPolling: () => void
     getEntityInfo: (entityName: string) => EntityInfo
+    rf: (name) => any
 }
 
 export interface EntityProps {
@@ -186,6 +188,13 @@ class Entity extends Component<EntityProps> {
                     };
                     let gqlQuery: DocumentNode = query.query;
                     // Inject fragment if it is missing one
+                    let fieldAppearances = []
+                    const rf = (fieldName) => {
+                        fieldAppearances.push(fieldName)
+                        return (subfieldName) => rf(`${fieldName}.${subfieldName}`)
+                    }
+                    // setTimeout(() => console.log(appearancesToFragment(fieldAppearances, 'Fields', _.upperFirst(entityInfo.name))), 500)
+                     //We would need type name
                     const inlineMissingFragments = (query: DocumentNode, fragment: FragmentDefinitionNode) => {
                         const hasFieldsFragmentInside = (sels: SelectionSetNode) => {
                             sels.selections.forEach(innerSels => {
@@ -203,6 +212,7 @@ class Entity extends Component<EntityProps> {
                             if (def.kind === "OperationDefinition") {
                                 const missing = hasFieldsFragmentInside(def.selectionSet)
                                 // TODO if(missing) def.fragments
+
                             }
                         })
                     }
@@ -542,7 +552,8 @@ class Entity extends Component<EntityProps> {
                                         relationInfo,
                                         startPolling,
                                         stopPolling,
-                                        getEntityInfo
+                                        getEntityInfo,
+                                        rf
                                     })
                                 }}
                             </All>
