@@ -68,6 +68,7 @@ export interface EntityRenderProps {
     stopPolling: () => void
     getEntityInfo: (entityName: string) => EntityInfo
     rf: (name) => any
+    namespace: any[]
 }
 
 export interface EntityProps {
@@ -553,7 +554,8 @@ class Entity extends Component<EntityProps> {
                                         startPolling,
                                         stopPolling,
                                         getEntityInfo,
-                                        rf
+                                        rf,
+                                        namespace
                                     })
                                 }}
                             </All>
